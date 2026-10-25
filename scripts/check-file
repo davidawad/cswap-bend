@@ -1,0 +1,34 @@
+#!/bin/sh
+# Type-check one Bend file and run its ground equations. `bend --check-only`
+# exits 1 with "SOME PROOFS FAIL" for any file whose import graph holds a
+# user foreign effect (src/effs/*), even when every equation passes. That one
+# verdict is expected for the effect modules; any other error still fails.
+# usage: scripts/check-file <bend> <file.bend>
+bend=$1
+f=$2
+limit=${CHECK_FILE_TIMEOUT:-300}
+# A check that does not finish in $limit seconds fails loudly, naming the file:
+# a hung equation must never stall CI silently.
+bounded() {
+  if command -v timeout > /dev/null 2>&1; then
+    timeout "$limit" "$@"
+  else
+    perl -e 'alarm shift; exec @ARGV' "$limit" "$@"
+  fi
+}
+rc=0
+out=$(bounded "$bend" "$f" --check-only 2>&1) || rc=$?
+[ "$rc" = 0 ] && exit 0
+if [ "$rc" = 124 ] || [ "$rc" = 142 ] || [ "$rc" = 137 ]; then
+  echo "TIMEOUT: $f did not check within ${limit}s" >&2
+  exit 1
+fi
+errs=$(printf '%s\n' "$out" | grep -c '^Error' || true)
+if [ "$errs" = 1 ] \
+  && printf '%s\n' "$out" | grep -q '^Error: [0-9]* defs rely on unsafe or foreign code' \
+  && printf '%s\n' "$out" | grep -q 'depend on foreign effects' \
+  && ! printf '%s\n' "$out" | grep -qi 'depend on unsafe'; then
+  exit 0
+fi
+printf '%s\n' "$out" >&2
+exit 1

@@ -1,0 +1,455 @@
+{
+  "exit": 2,
+  "stdout": [
+    {
+      "schemaVersion": 1,
+      "event": "poll",
+      "ts": "<rel:+1>",
+      "active": {
+        "number": 1,
+        "email": "owner@example.test"
+      },
+      "headroomPct": {
+        "1": null,
+        "2": 80.0,
+        "3": 80.0,
+        "4": 80.0,
+        "5": 80.0,
+        "6": 80.0
+      },
+      "threshold": 85.0,
+      "fetchErrors": {
+        "1": "http-500"
+      },
+      "windowsPct": {
+        "2": {
+          "5h": 10.0,
+          "7d": 20.0
+        },
+        "3": {
+          "5h": 10.0,
+          "7d": 20.0
+        },
+        "4": {
+          "5h": 10.0,
+          "7d": 20.0
+        },
+        "5": {
+          "5h": 10.0,
+          "7d": 20.0
+        },
+        "6": {
+          "5h": 10.0,
+          "7d": 20.0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "event": "no-switch",
+      "ts": "<rel:+1>",
+      "reason": "active-usage-unknown",
+      "detail": "headroom unknown; not counted toward failover"
+    }
+  ],
+  "files": {
+    ".claude-swap-backup/autoswitch_state.json": {
+      "absent": true
+    },
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "accountUuid": "00000000-0000-4000-8000-0000000000a1",
+          "emailAddress": "owner@example.test",
+          "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+          "organizationName": "owner@example.test's Organization",
+          "displayName": "Owner",
+          "organizationRole": "admin"
+        }
+      }
+    },
+    ".claude/.credentials.json": {
+      "mode": "0o600",
+      "json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:full_at}}",
+          "refreshToken": "{{tok:full_rt}}",
+          "expiresAt": "{{ms:+28800}}",
+          "scopes": [
+            "user:inference",
+            "user:profile",
+            "user:sessions:claude_code"
+          ],
+          "subscriptionType": "max"
+        }
+      }
+    },
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 1,
+        "lastUpdated": "{{isoz:-86400}}",
+        "sequence": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "{{isoz:-864000}}"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "3": {
+            "email": "st3@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "4": {
+            "email": "st4@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "5": {
+            "email": "st5@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "6": {
+            "email": "st6@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          }
+        }
+      }
+    },
+    ".claude-swap-backup/cache/usage.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 2,
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "lastAttemptAt": "<rel:+1>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "consecutiveFailures": 1,
+            "lastError": "http-500",
+            "backoffUntil": "<rel:+31>"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+1>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+1>",
+            "nextPollAt": "<rel:+322>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "3": {
+            "email": "st3@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+308>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "4": {
+            "email": "st4@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+273>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "5": {
+            "email": "st5@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+295>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "6": {
+            "email": "st6@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+300>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          }
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/usage",
+      "auth": "full_at",
+      "headers": {
+        "anthropic-beta": "oauth-2025-04-20"
+      },
+      "body": null
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st2",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st3",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st4",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st5",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st6",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    }
+  ]
+}

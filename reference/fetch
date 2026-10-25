@@ -1,0 +1,18 @@
+#!/bin/sh
+# Unpack the Python reference implementation this repo ports: upstream
+# claude-swap 0.27.2 (sha256-verified) with our live patches applied, into
+# reference/src (gitignored). The patches are the author's
+# live changes to it (see reference/patches/).
+set -eu
+here=$(cd "$(dirname "$0")" && pwd -P)
+version=0.27.2
+url="https://files.pythonhosted.org/packages/03/a6/ae45f5ed0261b5f3ec75e5c84a0a749a03ce7633d27fb89f03ceede44d2f/claude_swap-${version}.tar.gz"
+sha256=8ca851fd891fb80099579c82f39b12b7ab8fc0664a5ed49d0a9ea01d77100c81
+out="$here/src"
+[ -d "$out/claude_swap-$version" ] && { echo "$out/claude_swap-$version"; exit 0; }
+mkdir -p "$out"
+curl -fsSL -o "$out/sdist.tar.gz" "$url"
+echo "$sha256  $out/sdist.tar.gz" | shasum -a 256 -c - >/dev/null
+tar -xzf "$out/sdist.tar.gz" -C "$out"
+for p in "$here"/patches/*.patch; do patch -d "$out/claude_swap-$version" -p1 -s < "$p"; done
+echo "$out/claude_swap-$version"

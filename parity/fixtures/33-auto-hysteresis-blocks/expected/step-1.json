@@ -1,0 +1,153 @@
+{
+  "exit": 3,
+  "stdout": [
+    {
+      "schemaVersion": 1,
+      "event": "poll",
+      "ts": "<rel:+0>",
+      "active": {
+        "number": 1,
+        "email": "owner@example.test"
+      },
+      "headroomPct": {
+        "1": 14.0,
+        "2": 20.0,
+        "3": 21.0,
+        "4": 10.0,
+        "5": 0.0,
+        "6": 5.0
+      },
+      "threshold": 85.0,
+      "windowsPct": {
+        "1": {
+          "5h": 86.0,
+          "7d": 40.0
+        },
+        "2": {
+          "5h": 80.0,
+          "7d": 20.0
+        },
+        "3": {
+          "5h": 10.0,
+          "7d": 79.0
+        },
+        "4": {
+          "5h": 90.0,
+          "7d": 10.0
+        },
+        "5": {
+          "5h": 100.0,
+          "7d": 10.0
+        },
+        "6": {
+          "5h": 5.0,
+          "7d": 95.0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "event": "no-switch",
+      "ts": "<rel:+0>",
+      "reason": "no-qualifying-candidate",
+      "detail": "no candidate is below the threshold and better than the active account by the hysteresis margin, or usage is unreadable this tick"
+    }
+  ],
+  "files": {
+    ".claude-swap-backup/autoswitch_state.json": {
+      "absent": true
+    },
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "accountUuid": "00000000-0000-4000-8000-0000000000a1",
+          "emailAddress": "owner@example.test",
+          "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+          "organizationName": "owner@example.test's Organization",
+          "displayName": "Owner",
+          "organizationRole": "admin"
+        }
+      }
+    },
+    ".claude/.credentials.json": {
+      "mode": "0o600",
+      "json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:full_at}}",
+          "refreshToken": "{{tok:full_rt}}",
+          "expiresAt": "{{ms:+28800}}",
+          "scopes": [
+            "user:inference",
+            "user:profile",
+            "user:sessions:claude_code"
+          ],
+          "subscriptionType": "max"
+        }
+      }
+    },
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 1,
+        "lastUpdated": "{{isoz:-86400}}",
+        "sequence": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "{{isoz:-864000}}"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "3": {
+            "email": "st3@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "4": {
+            "email": "st4@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "5": {
+            "email": "st5@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "6": {
+            "email": "st6@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          }
+        }
+      }
+    }
+  },
+  "requests": []
+}

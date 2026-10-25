@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "stdout": {
+    "schemaVersion": 1,
+    "error": {
+      "type": "ValidationError",
+      "message": "Invalid account identifier: not an id"
+    }
+  },
+  "files": {},
+  "requests": []
+}

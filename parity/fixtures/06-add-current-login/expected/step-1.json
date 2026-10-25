@@ -1,0 +1,68 @@
+{
+  "exit": 0,
+  "stdout": null,
+  "files": {
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 1,
+        "lastUpdated": "<rel:+0>",
+        "sequence": [
+          1
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "<rel:+0>"
+          }
+        }
+      }
+    },
+    ".claude-swap-backup/credentials/.creds-1-owner@example.test.enc": {
+      "mode": "0o600",
+      "b64json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:full_at}}",
+          "refreshToken": "{{tok:full_rt}}",
+          "expiresAt": "{{ms:+28800}}",
+          "scopes": [
+            "user:inference",
+            "user:profile",
+            "user:sessions:claude_code"
+          ],
+          "subscriptionType": "max"
+        }
+      }
+    },
+    ".claude-swap-backup/configs/.claude-config-1-owner@example.test.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "accountUuid": "00000000-0000-4000-8000-0000000000a1",
+          "emailAddress": "owner@example.test",
+          "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+          "organizationName": "owner@example.test's Organization",
+          "displayName": "Owner",
+          "organizationRole": "admin"
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/profile",
+      "auth": "full_at",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body": null
+    }
+  ]
+}

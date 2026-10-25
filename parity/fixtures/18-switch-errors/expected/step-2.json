@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "stdout": {
+    "schemaVersion": 1,
+    "error": {
+      "type": "AccountNotFoundError",
+      "message": "No account found with identifier: nobody@example.test"
+    }
+  },
+  "files": {},
+  "requests": []
+}

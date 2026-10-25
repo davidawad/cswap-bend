@@ -1,0 +1,84 @@
+{
+  "description": "add-token from stdin with --email; then list --json reads its usage through the haiku probe (patch 0003).",
+  "contract": [
+    "add-token",
+    ".enc",
+    "sequence.json",
+    "probe"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "add-token",
+        "-",
+        "--email",
+        "new@example.test"
+      ],
+      "stdin": "{{tok:new}}\n",
+      "stdout": "text",
+      "stdout_contains": [
+        "Added",
+        "Account 1",
+        "new@example.test"
+      ],
+      "capture": [
+        ".claude-swap-backup/sequence.json",
+        ".claude-swap-backup/credentials/",
+        ".claude-swap-backup/configs/",
+        ".claude-swap-backup/credentials/.creds-1-new@example.test.enc",
+        ".claude-swap-backup/configs/.claude-config-1-new@example.test.json"
+      ]
+    },
+    {
+      "argv": [
+        "list",
+        "--json"
+      ],
+      "http": [
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "new",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.06",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.31",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        }
+      ],
+      "capture": [
+        ".claude-swap-backup/cache/usage.json"
+      ]
+    }
+  ]
+}

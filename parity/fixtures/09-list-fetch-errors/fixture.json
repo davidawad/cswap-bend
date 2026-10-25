@@ -1,0 +1,170 @@
+{
+  "description": "Error paths on a cold cache: usage endpoint 429 falls back to the probe; a probe 429 that still carries ratelimit headers is a valid 100% reading; a probe 429 without headers is an error (usageError http-429, Retry-After honoured in backoffUntil); a probe 401 is http-401; a 500 is http-500.",
+  "contract": [
+    "probe",
+    "usage.json",
+    "backoff",
+    "list"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "list",
+        "--json"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/usage",
+          "auth": "full_at",
+          "status": 429,
+          "headers": {
+            "retry-after": "30"
+          },
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "error",
+              "message": "FAKE"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "full_at",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.25",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.5",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st2",
+          "status": 429,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "1.0",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.8",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "rate_limit_error",
+              "message": "rate limited"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st3",
+          "status": 429,
+          "headers": {
+            "retry-after": "120"
+          },
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "rate_limit_error",
+              "message": "FAKE"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st4",
+          "status": 401,
+          "headers": {},
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "rate_limit_error",
+              "message": "FAKE"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st5",
+          "status": 500,
+          "headers": {},
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "rate_limit_error",
+              "message": "FAKE"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st6",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.0",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.1",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        }
+      ],
+      "capture": [
+        ".claude-swap-backup/cache/usage.json"
+      ]
+    }
+  ]
+}

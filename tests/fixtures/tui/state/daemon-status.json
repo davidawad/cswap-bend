@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "pid": @PID@,
+  "version": "cswap-bend 0.0.1",
+  "started_at": "2026-10-23T07:00:00Z",
+  "last_poll_at": "2026-10-23T08:59:45Z",
+  "next_poll_at": "2026-10-23T09:00:45Z",
+  "active": 1,
+  "config": {
+    "threshold": 85.0,
+    "interval_seconds": 30,
+    "cooldown_seconds": 300,
+    "strategy": "best",
+    "models": [],
+    "include_api_keys": false
+  },
+  "accounts": {
+    "1": {
+      "pct_5h": 47.0,
+      "pct_7d": 62.5,
+      "fetched_at": "2026-10-23T08:59:30Z",
+      "backoff_until": null,
+      "last_error": null
+    }
+  }
+}

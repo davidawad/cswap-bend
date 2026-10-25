@@ -1,0 +1,41 @@
+{
+  "description": "add-token with an sk-ant-api key: kind api_key, raw key stored, list reports usageStatus api_key without any HTTP.",
+  "contract": [
+    "add-token",
+    "list"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "add-token",
+        "-"
+      ],
+      "stdin": "{{tok:apikey}}\n",
+      "stdout": "text",
+      "stdout_contains": [
+        "api-key-1@token.local"
+      ],
+      "capture": [
+        ".claude-swap-backup/sequence.json",
+        ".claude-swap-backup/credentials/.creds-1-api-key-1@token.local.enc"
+      ]
+    },
+    {
+      "argv": [
+        "list",
+        "--json"
+      ]
+    }
+  ]
+}

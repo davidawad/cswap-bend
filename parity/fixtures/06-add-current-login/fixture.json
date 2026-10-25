@@ -1,0 +1,116 @@
+{
+  "description": "add captures the live /login (full credential with refresh token) after the profile-oracle ownership check; status --json then reads usage from /api/oauth/usage.",
+  "contract": [
+    "add",
+    "status",
+    "usage endpoint"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "add"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/profile",
+          "auth": "full_at",
+          "body": {
+            "account": {
+              "uuid": "00000000-0000-4000-8000-0000000000a1",
+              "email": "owner@example.test"
+            },
+            "organization": {
+              "uuid": "00000000-0000-4000-8000-0000000000b1"
+            }
+          }
+        }
+      ],
+      "stdout": "text",
+      "stdout_contains": [
+        "Added",
+        "Account 1",
+        "owner@example.test"
+      ],
+      "capture": [
+        ".claude-swap-backup/sequence.json",
+        ".claude-swap-backup/credentials/.creds-1-owner@example.test.enc",
+        ".claude-swap-backup/configs/.claude-config-1-owner@example.test.json"
+      ]
+    },
+    {
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/usage",
+          "auth": "full_at",
+          "body": {
+            "five_hour": {
+              "utilization": 12.0,
+              "resets_at": "{{iso:+5400}}"
+            },
+            "seven_day": {
+              "utilization": 40.0,
+              "resets_at": "{{iso:+259200}}"
+            },
+            "extra_usage": {
+              "is_enabled": false
+            },
+            "limits": [
+              {
+                "percent": 33.0,
+                "resets_at": "{{iso:+259200}}",
+                "scope": {
+                  "model": {
+                    "display_name": "Opus"
+                  }
+                }
+              },
+              {
+                "percent": 12.5,
+                "resets_at": "{{iso:+259200}}",
+                "scope": {
+                  "model": {
+                    "display_name": "Fable"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/profile",
+          "auth": "full_at",
+          "body": {
+            "account": {
+              "uuid": "00000000-0000-4000-8000-0000000000a1",
+              "email": "owner@example.test"
+            },
+            "organization": {
+              "uuid": "00000000-0000-4000-8000-0000000000b1"
+            }
+          }
+        }
+      ],
+      "capture": [
+        ".claude-swap-backup/cache/usage.json"
+      ]
+    }
+  ]
+}

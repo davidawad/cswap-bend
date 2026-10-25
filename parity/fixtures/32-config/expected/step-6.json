@@ -1,0 +1,16 @@
+{
+  "exit": 0,
+  "stdout": null,
+  "files": {
+    ".claude-swap-backup/settings.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 1,
+        "autoswitch": {
+          "threshold": 85.0
+        }
+      }
+    }
+  },
+  "requests": []
+}

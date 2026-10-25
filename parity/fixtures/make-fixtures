@@ -1,0 +1,526 @@
+#!/usr/bin/env python3
+"""Generate the fixture directories (home/ seeds + fixture.json).
+
+    docs/cswap-bend/fixtures/make-fixtures          # rewrite every fixture dir
+    docs/cswap-bend/replay --record <reference-cswap>   # then re-record goldens
+
+Fixture inputs are code so the six-account world stays consistent across
+fixtures; the goldens (expected/) are always recorded from the reference,
+never written by hand. Everything here is fake: tokens contain FAKE, emails
+are @example.test, HTTP is the replay's stub server.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+BK = ".claude-swap-backup"
+
+# ------------------------------------------------------------------ the world
+
+TOKENS = {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777",
+}
+
+OWNER = {
+    "email": "owner@example.test",
+    "uuid": "00000000-0000-4000-8000-0000000000a1",
+    "org": "00000000-0000-4000-8000-0000000000b1",
+    "orgName": "owner@example.test's Organization",
+}
+SETUP = {n: f"st{n}@example.test" for n in range(2, 7)}
+
+ANTHROPIC = "https://api.anthropic.com"
+
+
+def full_creds() -> str:
+    # Real /login credential shape; expiresAt 8h out so nothing refreshes.
+    return (
+        '{"claudeAiOauth": {"accessToken": "{{tok:full_at}}", '
+        '"refreshToken": "{{tok:full_rt}}", "expiresAt": {{ms:+28800}}, '
+        '"scopes": ["user:inference", "user:profile", "user:sessions:claude_code"], '
+        '"subscriptionType": "max"}}'
+    )
+
+
+def setup_creds(tok: str) -> str:
+    # Exactly what `cswap add-token` stores (switcher.py add_account_from_token).
+    return '{"claudeAiOauth": {"accessToken": "{{tok:%s}}", "scopes": ["user:inference"]}}' % tok
+
+
+def owner_oauth_account() -> dict:
+    return {
+        "accountUuid": OWNER["uuid"],
+        "emailAddress": OWNER["email"],
+        "organizationUuid": OWNER["org"],
+        "organizationName": OWNER["orgName"],
+        "displayName": "Owner",
+        "organizationRole": "admin",
+    }
+
+
+def claude_json(oauth: dict | None) -> str:
+    doc = {"numStartups": 42, "theme": "dark", "hasCompletedOnboarding": True}
+    if oauth is not None:
+        doc["oauthAccount"] = oauth
+    return json.dumps(doc, indent=2)
+
+
+def setup_config(email: str) -> str:
+    return json.dumps({"oauthAccount": {"emailAddress": email, "accountUuid": "",
+                                        "organizationUuid": None, "organizationName": None}})
+
+
+def six_accounts(active: int = 1, slots=range(1, 7), disabled=()) -> dict[str, str]:
+    """home/ files for the production-shaped world: slot 1 = full login,
+    slots 2-6 = setup-tokens. `active` is the live login (None = logged out)."""
+    files: dict[str, str] = {}
+    seq = {"activeAccountNumber": active, "lastUpdated": "{{isoz:-86400}}",
+           "sequence": list(slots), "accounts": {}}
+    for n in slots:
+        if n == 1:
+            rec = {"email": OWNER["email"], "uuid": OWNER["uuid"],
+                   "organizationUuid": OWNER["org"], "organizationName": OWNER["orgName"],
+                   "added": "{{isoz:-864000}}"}
+            files[f"{BK}/credentials/.creds-1-{OWNER['email']}.enc.b64src"] = full_creds()
+            files[f"{BK}/configs/.claude-config-1-{OWNER['email']}.json"] = claude_json(owner_oauth_account())
+        else:
+            email = SETUP[n]
+            rec = {"email": email, "uuid": "", "organizationUuid": "", "organizationName": "",
+                   "added": "{{isoz:-864000}}"}
+            files[f"{BK}/credentials/.creds-{n}-{email}.enc.b64src"] = setup_creds(f"st{n}")
+            files[f"{BK}/configs/.claude-config-{n}-{email}.json"] = setup_config(email)
+        if n in disabled:
+            rec["disabled"] = True
+        seq["accounts"][str(n)] = rec
+    files[f"{BK}/sequence.json"] = json.dumps(seq, indent=2)
+    if active == 1:
+        files[".claude/.credentials.json"] = full_creds()
+        files[".claude.json"] = claude_json(owner_oauth_account())
+    elif active is not None:
+        files[".claude/.credentials.json"] = setup_creds(f"st{active}")
+        files[".claude.json"] = claude_json(json.loads(setup_config(SETUP[active]))["oauthAccount"])
+    return files
+
+
+def window(pct, reset_s):
+    return {"pct": pct, "resets_at": "{{iso:+%d}}" % reset_s, "countdown": "seed", "clock": "seed"}
+
+
+def usage_row(n: int, five: float, seven: float, *, age=30, scoped=None, next_poll=150,
+              interval=180.0, **extra) -> dict:
+    email = OWNER["email"] if n == 1 else SETUP[n]
+    org = OWNER["org"] if n == 1 else ""
+    last_good = {"five_hour": window(five, 7200), "seven_day": window(seven, 259200)}
+    if scoped:
+        last_good["scoped"] = [dict(window(p, 259200), name=name) for name, p in scoped.items()]
+    row = {"email": email, "organizationUuid": org, "lastGood": last_good,
+           "fetchedAt": "{{epoch:-%d}}" % age, "lastAttemptAt": "{{epoch:-%d}}" % age,
+           "claimId": None, "claimUntil": 0.0, "consecutiveFailures": 0, "lastError": None,
+           "backoffUntil": None, "nextPollAt": "{{epoch:+%d}}" % next_poll,
+           "pollIntervalS": interval, "authDeadStrikes": 0}
+    row.update(extra)
+    return row
+
+
+def usage_cache(rows: dict[int, dict]) -> dict[str, str]:
+    # "{{epoch:N}}" strings become numbers when the replay seeds a .json file.
+    doc = {"schemaVersion": 2, "accounts": {str(n): r for n, r in rows.items()}}
+    return {f"{BK}/cache/usage.json": json.dumps(doc, indent=2)}
+
+
+def settings(**autoswitch) -> dict[str, str]:
+    return {f"{BK}/settings.json": json.dumps({"schemaVersion": 1, "autoswitch": autoswitch}, indent=2)}
+
+
+# ------------------------------------------------------------------ HTTP stubs
+
+def probe(tok: str, five: float, seven: float, status=200, five_reset=3600, seven_reset=259200,
+          extra_headers=None) -> dict:
+    """Patched-0003 setup-token usage read: 1-token haiku POST /v1/messages."""
+    headers = {
+        "anthropic-ratelimit-unified-5h-utilization": str(five),
+        "anthropic-ratelimit-unified-5h-reset": "{{epoch:+%d}}" % five_reset,
+        "anthropic-ratelimit-unified-7d-utilization": str(seven),
+        "anthropic-ratelimit-unified-7d-reset": "{{epoch:+%d}}" % seven_reset,
+    }
+    headers.update(extra_headers or {})
+    body = ({"id": "msg_FAKE", "type": "message", "role": "assistant", "model": "claude-haiku-5-5",
+             "content": [{"type": "text", "text": "."}], "stop_reason": "max_tokens",
+             "usage": {"input_tokens": 20, "output_tokens": 1}}
+            if status == 200 else
+            {"type": "error", "error": {"type": "rate_limit_error", "message": "rate limited"}})
+    return {"method": "POST", "url": f"{ANTHROPIC}/v1/messages", "auth": tok,
+            "status": status, "headers": headers, "body": body}
+
+
+def probe_fail(tok: str, status: int, retry_after=None) -> dict:
+    headers = {"retry-after": str(retry_after)} if retry_after is not None else {}
+    return {"method": "POST", "url": f"{ANTHROPIC}/v1/messages", "auth": tok, "status": status,
+            "headers": headers,
+            "body": {"type": "error", "error": {"type": "rate_limit_error", "message": "FAKE"}}}
+
+
+def usage_endpoint(tok="full_at", five=12.0, seven=40.0, scoped=None, status=200, retry_after=None):
+    if status != 200:
+        headers = {"retry-after": str(retry_after)} if retry_after is not None else {}
+        return {"method": "GET", "url": f"{ANTHROPIC}/api/oauth/usage", "auth": tok,
+                "status": status, "headers": headers,
+                "body": {"type": "error", "error": {"type": "error", "message": "FAKE"}}}
+    body = {"five_hour": {"utilization": five, "resets_at": "{{iso:+5400}}"},
+            "seven_day": {"utilization": seven, "resets_at": "{{iso:+259200}}"},
+            "extra_usage": {"is_enabled": False}}
+    if scoped:
+        body["limits"] = [{"percent": p, "resets_at": "{{iso:+259200}}",
+                           "scope": {"model": {"display_name": name}}} for name, p in scoped.items()]
+    return {"method": "GET", "url": f"{ANTHROPIC}/api/oauth/usage", "auth": tok, "body": body}
+
+
+def profile(tok="full_at"):
+    return {"method": "GET", "url": f"{ANTHROPIC}/api/oauth/profile", "auth": tok,
+            "body": {"account": {"uuid": OWNER["uuid"], "email": OWNER["email"]},
+                     "organization": {"uuid": OWNER["org"]}}}
+
+
+def profile_scope_denied(tok: str):
+    """A setup-token (user:inference only) asking the profile oracle."""
+    return {"method": "GET", "url": f"{ANTHROPIC}/api/oauth/profile", "auth": tok, "status": 403,
+            "body": {"type": "error", "error": {"type": "permission_error",
+                                                "message": "OAuth token does not meet scope requirement user:profile"}}}
+
+
+def all_probes(**pcts):
+    return [probe(f"st{n}", *pcts.get(f"st{n}", (0.1, 0.2))) for n in range(2, 7)]
+
+
+# ------------------------------------------------------------------ fixtures
+
+SWITCH_CAPTURE = [
+    ".claude/.credentials.json", ".claude.json", f"{BK}/sequence.json",
+    f"{BK}/credentials/", f"{BK}/configs/",
+]
+AUTO_CAPTURE = [f"{BK}/autoswitch_state.json", ".claude.json", ".claude/.credentials.json",
+                f"{BK}/sequence.json"]
+
+
+def fresh_six(over=None):
+    rows = {1: usage_row(1, 20.0, 40.0, scoped={"Opus": 30.0}),
+            2: usage_row(2, 10.0, 30.0), 3: usage_row(3, 5.0, 10.0),
+            4: usage_row(4, 50.0, 60.0), 5: usage_row(5, 70.0, 20.0),
+            6: usage_row(6, 1.0, 95.0)}
+    rows.update(over or {})
+    return rows
+
+
+FIXTURES: dict[str, dict] = {}
+
+
+def fixture(name, description, contract, steps, home=None):
+    FIXTURES[name] = {"description": description, "contract": contract,
+                      "tokens": TOKENS, "steps": steps, "_home": home or {}}
+
+
+fixture("01-list-empty", "list --json with no backup root at all.", ["CLI list"],
+        [{"argv": ["list", "--json"], "capture": [f"{BK}/"]}])
+
+fixture("02-status-empty", "status --json, logged out, nothing managed.", ["CLI status"],
+        [{"argv": ["status", "--json"]}])
+
+fixture("03-add-token-setup", "add-token from stdin with --email; then list --json reads its "
+        "usage through the haiku probe (patch 0003).", ["add-token", ".enc", "sequence.json", "probe"],
+        [{"argv": ["add-token", "-", "--email", "new@example.test"], "stdin": "{{tok:new}}\n",
+          "stdout": "text", "stdout_contains": ["Added", "Account 1", "new@example.test"],
+          "capture": [f"{BK}/sequence.json", f"{BK}/credentials/", f"{BK}/configs/",
+                      f"{BK}/credentials/.creds-1-new@example.test.enc",
+                      f"{BK}/configs/.claude-config-1-new@example.test.json"]},
+         {"argv": ["list", "--json"], "http": [probe("new", 0.06, 0.31)],
+          "capture": [f"{BK}/cache/usage.json"]}])
+
+fixture("04-add-token-default-email-slot", "add-token with --slot and no --email gets the "
+        "synthetic setup-token-<slot>@token.local identity.", ["add-token"],
+        [{"argv": ["add-token", "-", "--slot", "4"], "stdin": "{{tok:new}}\n", "stdout": "text",
+          "stdout_contains": ["Account 4", "setup-token-4@token.local"],
+          "capture": [f"{BK}/sequence.json", f"{BK}/credentials/",
+                      f"{BK}/credentials/.creds-4-setup-token-4@token.local.enc",
+                      f"{BK}/configs/.claude-config-4-setup-token-4@token.local.json"]}])
+
+fixture("05-add-token-api-key", "add-token with an sk-ant-api key: kind api_key, raw key stored, "
+        "list reports usageStatus api_key without any HTTP.", ["add-token", "list"],
+        [{"argv": ["add-token", "-"], "stdin": "{{tok:apikey}}\n", "stdout": "text",
+          "stdout_contains": ["api-key-1@token.local"],
+          "capture": [f"{BK}/sequence.json", f"{BK}/credentials/.creds-1-api-key-1@token.local.enc"]},
+         {"argv": ["list", "--json"]}])
+
+fixture("06-add-current-login", "add captures the live /login (full credential with refresh "
+        "token) after the profile-oracle ownership check; status --json then reads usage from "
+        "/api/oauth/usage.", ["add", "status", "usage endpoint"],
+        [{"argv": ["add"], "http": [profile()], "stdout": "text",
+          "stdout_contains": ["Added", "Account 1", OWNER["email"]],
+          "capture": [f"{BK}/sequence.json", f"{BK}/credentials/.creds-1-{OWNER['email']}.enc",
+                      f"{BK}/configs/.claude-config-1-{OWNER['email']}.json"]},
+         {"argv": ["status", "--json"], "http": [usage_endpoint(scoped={"Opus": 33.0, "Fable": 12.5}), profile()],
+          "capture": [f"{BK}/cache/usage.json"]}],
+        home={".claude/.credentials.json": full_creds(), ".claude.json": claude_json(owner_oauth_account())})
+
+fixture("07-list-six-fresh", "list --json over the production-shaped six accounts with a fresh "
+        "usage cache: served from cache/usage.json, no HTTP.", ["list", "usage.json"],
+        [{"argv": ["list", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("08-list-six-stale-fetch", "list --json with no usage cache: the full login is read via "
+        "/api/oauth/usage, the five setup-tokens via the 1-token haiku probe; usage.json v2 "
+        "rows and poll plans are written.", ["list", "probe", "usage endpoint", "usage.json", "poll policy"],
+        [{"argv": ["list", "--json"],
+          "http": [usage_endpoint(scoped={"Opus": 30.0})] + all_probes(st2=(0.1, 0.3), st3=(0.05, 0.1),
+                                                                      st4=(0.5, 0.6), st5=(0.7, 0.2), st6=(0.01, 0.95)),
+          "capture": [f"{BK}/cache/usage.json"]}],
+        home=six_accounts())
+
+fixture("09-list-fetch-errors", "Error paths on a cold cache: usage endpoint 429 falls back to "
+        "the probe; a probe 429 that still carries ratelimit headers is a valid 100% reading; a "
+        "probe 429 without headers is an error (usageError http-429, Retry-After honoured in "
+        "backoffUntil); a probe 401 is http-401; a 500 is http-500.",
+        ["probe", "usage.json", "backoff", "list"],
+        [{"argv": ["list", "--json"],
+          "http": [usage_endpoint(status=429, retry_after=30),
+                   probe("full_at", 0.25, 0.5),
+                   probe("st2", 1.0, 0.8, status=429),
+                   probe_fail("st3", 429, retry_after=120),
+                   probe_fail("st4", 401),
+                   probe_fail("st5", 500),
+                   probe("st6", 0.0, 0.1)],
+          "capture": [f"{BK}/cache/usage.json"]}],
+        home=six_accounts())
+
+fixture("10-status-managed", "status --json for a managed active account with fresh usage.",
+        ["status"], [{"argv": ["status", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("11-switch-to-setup-token", "switch 3 --json from the full login: backs up the outgoing "
+        "config, writes ~/.claude/.credentials.json (setup-token credential) and "
+        "~/.claude.json oauthAccount (other keys kept), records activeAccountNumber; status "
+        "then reports slot 3.", ["switch", ".credentials.json", ".claude.json", "sequence.json"],
+        [{"argv": ["switch", "3", "--json"],
+          "capture": SWITCH_CAPTURE + [f"{BK}/configs/.claude-config-1-{OWNER['email']}.json",
+                                       f"{BK}/credentials/.creds-1-{OWNER['email']}.enc"],
+          "http": [profile()]},
+         {"argv": ["status", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("12-switch-back-to-full", "switch 1 --json from a setup-token back to the full login.",
+        ["switch"],
+        [{"argv": ["switch", "1", "--json"], "capture": SWITCH_CAPTURE,
+          "http": [profile(), profile_scope_denied("st4")]}],
+        home={**six_accounts(active=4), **usage_cache(fresh_six())})
+
+fixture("13-switch-rotate", "bare switch --json rotates to the next slot in sequence order, "
+        "skipping a disabled slot.", ["switch rotation"],
+        [{"argv": ["switch", "--json"], "capture": [".claude.json", f"{BK}/sequence.json"],
+          "http": [profile()]}],
+        home={**six_accounts(active=1, disabled=(2,)), **usage_cache(fresh_six())})
+
+fixture("14-switch-best", "switch --strategy best --json picks the account with the most "
+        "headroom (100 - max(5h, 7d)).", ["switch best"],
+        [{"argv": ["switch", "--strategy", "best", "--json"], "capture": [".claude.json"],
+          "http": [profile()]}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 92.0, 40.0)}))})
+
+fixture("15-switch-best-model", "--model Opus makes the full login's Opus weekly window "
+        "binding; best then leaves it even though 5h/7d are low.", ["switch best", "models"],
+        [{"argv": ["switch", "--strategy", "best", "--model", "Opus", "--json"],
+          "capture": [".claude.json"], "http": [profile()]}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 5.0, 10.0, scoped={"Opus": 99.0})}))})
+
+fixture("16-switch-best-stay", "switch --strategy best when the active already has the most "
+        "headroom: no switch, reason already-best.", ["switch best"],
+        [{"argv": ["switch", "--strategy", "best", "--json"]}],
+        home={**six_accounts(active=3), **usage_cache(fresh_six())})
+
+fixture("17-switch-already-active", "switch 1 --json while on slot 1: no-op already-active.",
+        ["switch"], [{"argv": ["switch", "1", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("18-switch-errors", "Error envelopes: unknown slot, unknown email, bad identifier; "
+        "--json keeps stdout pure JSON and exits 1.", ["errors"],
+        [{"argv": ["switch", "9", "--json"]},
+         {"argv": ["switch", "nobody@example.test", "--json"]},
+         {"argv": ["switch", "not an id", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("19-remove", "remove 6 with y on stdin deletes its .enc and config and drops it from "
+        "sequence.json; list no longer shows it.", ["remove"],
+        [{"argv": ["remove", "6"], "stdin": "y\n", "stdout": "text",
+          "stdout_contains": ["Removed Account-6"],
+          "capture": [f"{BK}/sequence.json", f"{BK}/credentials/", f"{BK}/configs/"]},
+         {"argv": ["list", "--json"]}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+IMPORT_DOC = {
+    "schemaVersion": 1, "activeAccountNumber": 1,
+    "accounts": [
+        {"number": 2, "email": SETUP[2], "organizationName": "", "organizationUuid": "",
+         "isOrganization": False, "active": False, "usageStatus": "ok", "usageAgeSeconds": 20.0,
+         "usage": {"fiveHour": {"pct": 44.0, "resetsAt": "{{iso:+3000}}", "countdown": "x", "clock": "y"},
+                   "sevenDay": {"pct": 55.0, "resetsAt": "{{iso:+200000}}"}}},
+        {"number": 3, "email": SETUP[3], "organizationName": "", "organizationUuid": "",
+         "isOrganization": False, "active": False, "usageStatus": "unavailable", "usage": None},
+        {"number": 9, "email": "stranger@example.test", "organizationName": "", "organizationUuid": "",
+         "isOrganization": False, "active": False, "usageStatus": "ok", "usageAgeSeconds": 5,
+         "usage": {"fiveHour": {"pct": 1.0}}},
+    ],
+}
+
+fixture("20-import-usage-hold", "import-usage adopts another machine's list --json reading for "
+        "matching identities (slot 2), skips non-ok and unknown rows, and --hold 600 stops this "
+        "machine fetching slot 2; the following list fetches only the others.",
+        ["import-usage", "usage.json", "hold"],
+        [{"argv": ["import-usage", "usage-in.json", "--hold", "600"], "stdout": "text",
+          "write": {"usage-in.json": json.dumps(IMPORT_DOC, indent=2)},
+          "stderr_contains": ["Done: 1 adopted, 0 kept, 2 skipped"],
+          "capture": [f"{BK}/cache/usage.json"]},
+         {"argv": ["list", "--json"],
+          "http": [usage_endpoint()] + [probe(f"st{n}", 0.1, 0.2) for n in (3, 4, 5, 6)]}],
+        home=six_accounts())
+
+fixture("21-auto-below-threshold", "auto --once --json: active below threshold -> poll + "
+        "no-switch below-threshold, exit 2, nothing written.", ["auto", "events", "exit codes"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE}],
+        home={**six_accounts(), **usage_cache(fresh_six())})
+
+fixture("22-auto-proactive-best", "auto --once: active at 90% >= threshold 85 -> proactive "
+        "switch to the most-headroom candidate (slot 3), exit 0, autoswitch_state.json written.",
+        ["auto", "strategy best", "state file"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE, "http": [profile()]}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 90.0, 40.0)}))})
+
+fixture("23-auto-unknown-headroom", "Patch 0002: the active account's usage read fails (HTTP "
+        "500, cold cache) -> no-switch active-usage-unknown, never a failover; exit 2.",
+        ["auto", "unknown headroom"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE + [f"{BK}/cache/usage.json"],
+          "http": [usage_endpoint(status=500)] + all_probes()}],
+        home=six_accounts())
+
+fixture("24-auto-cooldown", "auto --once: proactive trigger inside cooldownSeconds of the last "
+        "switch -> no-switch cooldown, exit 2.", ["auto", "cooldown"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 90.0, 40.0)})),
+              f"{BK}/autoswitch_state.json": '{"schemaVersion": 1, "lastSwitchAt": {{epoch:-60}}, '
+                                             '"lastSwitchTo": "1", "lastSwitchFrom": 4, '
+                                             '"leftHeadroom": 2.0, "leftRecoveryAt": null, '
+                                             '"leftTrigger": "proactive"}'})
+
+fixture("25-auto-at-limit-ignores-cooldown", "auto --once: active at 100% -> at-limit switch "
+        "even inside the cooldown.", ["auto", "cooldown", "at-limit"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE, "http": [profile()]}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 100.0, 40.0)})),
+              f"{BK}/autoswitch_state.json": '{"schemaVersion": 1, "lastSwitchAt": {{epoch:-60}}, '
+                                             '"lastSwitchTo": "1", "lastSwitchFrom": 4, '
+                                             '"leftHeadroom": 2.0, "leftRecoveryAt": null, '
+                                             '"leftTrigger": "proactive"}'})
+
+fixture("26-auto-all-exhausted", "auto --once: every account at 100% -> all-exhausted with the "
+        "earliest reset, exit 3.", ["auto", "failover", "exit codes"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE}],
+        home={**six_accounts(), **usage_cache({n: usage_row(n, 100.0, 50.0 + n) for n in range(1, 7)})})
+
+fixture("27-auto-model-binding", "auto --once --model Fable,Opus: the full login's Opus weekly "
+        "window (97%) is binding though 5h/7d are low -> proactive switch.", ["auto", "models"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best",
+                   "--model", "Fable,Opus"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE, "http": [profile()]}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 5.0, 10.0, scoped={"Opus": 97.0, "Fable": 3.0})}))})
+
+fixture("28-auto-dry-run", "auto --once --dry-run: switch event with dryRun true, exit 0, no "
+        "state written, live login untouched.", ["auto", "dry-run"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best", "--dry-run"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE}],
+        home={**six_accounts(), **usage_cache(fresh_six({1: usage_row(1, 90.0, 40.0)}))})
+
+fixture("29-auto-no-candidates", "auto --once with a single managed account at its limit -> "
+        "no-candidates, exit 3.", ["auto", "exit codes"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl"}],
+        home={**six_accounts(slots=[1]), **usage_cache({1: usage_row(1, 100.0, 40.0)})})
+
+fixture("30-auto-unmanaged-active", "auto --once while the live login is not managed -> "
+        "no-switch unmanaged-active-account (auto-loop.sh keys its self-heal on this), exit 2.",
+        ["auto", "auto-loop.sh"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "http": []}],
+        home={**{k: v for k, v in six_accounts(slots=range(2, 7), active=None).items()},
+              ".claude/.credentials.json": full_creds(), ".claude.json": claude_json(owner_oauth_account()),
+              **usage_cache({n: usage_row(n, 10.0, 10.0) for n in range(2, 7)})})
+
+fixture("31-auto-settings-file", "settings.json supplies threshold/strategy/cooldown when no "
+        "flags are given (threshold 80 here, active at 82% -> proactive switch).",
+        ["settings.json", "auto"],
+        [{"argv": ["auto", "--once", "--json"], "stdout": "jsonl", "capture": AUTO_CAPTURE,
+          "http": [profile()]}],
+        home={**six_accounts(), **settings(threshold=80.0, strategy="best", cooldownSeconds=300.0),
+              **usage_cache(fresh_six({1: usage_row(1, 82.0, 40.0)}))})
+
+fixture("32-config", "config set/get/list --json/unset round-trip on settings.json, plus "
+        "range validation.", ["settings.json", "config"],
+        [{"argv": ["config", "set", "autoswitch.threshold", "85"], "stdout": "text",
+          "capture": [f"{BK}/settings.json"]},
+         {"argv": ["config", "set", "autoswitch.strategy", "best"], "stdout": "text"},
+         {"argv": ["config", "get", "autoswitch.threshold", "--json"]},
+         {"argv": ["config", "list", "--json"]},
+         {"argv": ["config", "set", "autoswitch.threshold", "120"], "stdout": "text"},
+         {"argv": ["config", "unset", "autoswitch.strategy"], "stdout": "text",
+          "capture": [f"{BK}/settings.json"]}],
+        home=six_accounts())
+
+fixture("33-auto-hysteresis-blocks", "auto --once: active at 86% (headroom 14) but no candidate "
+        "beats it by hysteresisPct (10) while staying below the threshold -> "
+        "no-qualifying-candidate, exit 3.", ["auto", "strategy best", "hysteresis"],
+        [{"argv": ["auto", "--once", "--json", "--threshold", "85", "--strategy", "best"],
+          "stdout": "jsonl", "capture": AUTO_CAPTURE}],
+        home={**six_accounts(), **usage_cache({1: usage_row(1, 86.0, 40.0),
+                                               2: usage_row(2, 80.0, 20.0), 3: usage_row(3, 10.0, 79.0),
+                                               4: usage_row(4, 90.0, 10.0), 5: usage_row(5, 100.0, 10.0),
+                                               6: usage_row(6, 5.0, 95.0)})})
+
+
+# ------------------------------------------------------------------ write
+
+def main() -> None:
+    for old in ROOT.iterdir():
+        if old.is_dir() and (old / "fixture.json").exists() and old.name not in FIXTURES:
+            shutil.rmtree(old)
+    for name, fx in FIXTURES.items():
+        d = ROOT / name
+        if (d / "home").exists():
+            shutil.rmtree(d / "home")
+        d.mkdir(exist_ok=True)
+        home = fx.pop("_home")
+        for rel, text in home.items():
+            p = d / "home" / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text)
+        if not home:
+            (d / "home").mkdir(exist_ok=True)
+            (d / "home" / ".keep").write_text("")
+        (d / "fixture.json").write_text(json.dumps(fx, indent=2) + "\n")
+    print(f"wrote {len(FIXTURES)} fixtures")
+
+
+if __name__ == "__main__":
+    main()

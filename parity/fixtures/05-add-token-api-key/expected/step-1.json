@@ -1,0 +1,31 @@
+{
+  "exit": 0,
+  "stdout": null,
+  "files": {
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": null,
+        "lastUpdated": "<rel:+0>",
+        "sequence": [
+          1
+        ],
+        "accounts": {
+          "1": {
+            "email": "api-key-1@token.local",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "<rel:+0>",
+            "kind": "api_key"
+          }
+        }
+      }
+    },
+    ".claude-swap-backup/credentials/.creds-1-api-key-1@token.local.enc": {
+      "mode": "0o600",
+      "b64text": "{{tok:apikey}}"
+    }
+  },
+  "requests": []
+}

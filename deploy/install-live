@@ -1,0 +1,222 @@
+#!/bin/sh
+# The flip: replace the Python poller with the Bend daemon as the live
+# autoswitch job. Dry run unless --live: it prints every step and changes
+# nothing.
+#
+#   deploy/install-live --report PATH            dry run
+#   deploy/install-live --report PATH --live     flip
+#   deploy/install-live --uninstall [--live]     reverse it (restore the Python poller)
+#
+# Install, in order:
+#   1. refuse unless --report names a non-empty file (the last
+#      `scripts/shadow-compare` report: a speed bump, not a proof);
+#   2. stop and unload the Python job com.david.cswap-auto (its LaunchAgent file
+#      is left in place, so the dotfiles installer can reload it);
+#   3. unload the shadow job com.david.cswap-bend-shadow and remove its agent;
+#   4. build bin/cswap-bend, copy it to ~/.local/share/cswap-bend/<sha>/cswap-bend;
+#   5. write com.david.cswap-bend (`cswap-bend auto`, no --shadow, with the
+#      interval/threshold/models/strategy read from the poller's plist) and load it.
+# If anything fails after step 2 (the load, the check that launchctl lists the
+# new job, any other step) the run puts the Python poller back itself:
+# bootstrap com.david.cswap-auto from its kept agent file, verify it is listed,
+# exit 1 with "Python poller restored" or "NOT restored: <why>".
+# Uninstall: unload and remove com.david.cswap-bend, then re-run
+# the legacy poller's install script (LIVE_RESTORE_INSTALL), which rebuilds and reloads
+# the Python poller.
+#
+# ~/.claude-swap-backup is never touched. Test seams: SHADOW_HOME (default $HOME),
+# SHADOW_LIVE_PLIST (the poller's plist), SHADOW_SHA, SHADOW_NO_LAUNCHCTL=1,
+# SHADOW_LAUNCHCTL (a command to run instead of launchctl),
+# LIVE_BIN (use this binary, skip the build), LIVE_RESTORE_INSTALL (the installer
+# uninstall runs).
+set -eu
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(dirname "$here")
+live=0
+uninstall=0
+report=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --live) live=1 ;;
+    --uninstall) uninstall=1 ;;
+    --report)
+      [ $# -ge 2 ] || { echo "install-live: --report needs a path" >&2; exit 2; }
+      report=$2
+      shift
+      ;;
+    -h | --help)
+      sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "install-live: unknown argument $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+home=${SHADOW_HOME:-$HOME}
+label=com.david.cswap-bend
+python_label=com.david.cswap-auto
+shadow_label=com.david.cswap-bend-shadow
+live_plist=${SHADOW_LIVE_PLIST:-$home/.config/cswap-legacy/com.david.cswap-auto.plist}
+restore=${LIVE_RESTORE_INSTALL:-$home/.config/cswap-legacy/install}
+state_dir=$home/.local/state/cswap-bend
+agents=$home/Library/LaunchAgents
+agent=$agents/$label.plist
+shadow_agent=$agents/$shadow_label.plist
+sha=${SHADOW_SHA:-$(git -C "$root" rev-parse --short HEAD)}
+dest_dir=$home/.local/share/cswap-bend/$sha
+dest_bin=$dest_dir/cswap-bend
+uid=$(id -u)
+
+say() { printf '%s\n' "$*"; }
+if [ "$live" = 1 ]; then mode=LIVE; else mode="DRY RUN (nothing is changed; pass --live)"; fi
+say "install-live: $mode"
+
+launchctl_() {
+  if [ "${SHADOW_NO_LAUNCHCTL:-0}" = 1 ]; then
+    say "  (launchctl $* skipped)"
+  else
+    "${SHADOW_LAUNCHCTL:-launchctl}" "$@"
+  fi
+}
+
+python_agent=$agents/$python_label.plist
+armed=0
+
+# Put the Python poller back: unload anything of ours that is partly loaded,
+# bootstrap com.david.cswap-auto from its kept agent file and check that
+# launchctl lists it. Exits 1 either way; it never returns.
+restore_python() { # why-the-flip-failed
+  armed=0
+  why=""
+  launchctl_ bootout "gui/$uid/$label" > /dev/null 2>&1 || true
+  if [ ! -f "$python_agent" ]; then
+    why="the agent file $python_agent is missing"
+  elif ! launchctl_ bootstrap "gui/$uid" "$python_agent"; then
+    why="launchctl bootstrap of $python_label failed"
+  elif [ "${SHADOW_NO_LAUNCHCTL:-0}" != 1 ] && ! launchctl_ list 2> /dev/null | grep -q "$python_label"; then
+    why="$python_label is not listed after the bootstrap"
+  fi
+  if [ -n "$why" ]; then
+    echo "install-live: $1; Python poller NOT restored: $why. Run $restore by hand." >&2
+  else
+    echo "install-live: $1; Python poller restored" >&2
+  fi
+  exit 1
+}
+
+# Whatever fails once the Python poller is stopped, the poller comes back.
+on_exit() {
+  rc=$?
+  if [ "$armed" = 1 ] && [ "$rc" != 0 ]; then
+    restore_python "Bend load failed (step failed with exit $rc)"
+  fi
+}
+trap on_exit EXIT
+
+if [ "$uninstall" = 1 ]; then
+  say "would: launchctl bootout gui/$uid/$label"
+  say "would: remove $agent"
+  say "would: run $restore (rebuilds and reloads the Python poller $python_label)"
+  say "kept: $dest_dir and $state_dir"
+  if [ "$live" = 1 ]; then
+    launchctl_ bootout "gui/$uid/$label" 2> /dev/null || true
+    rm -f "$agent"
+    # The installer rebuilds and reloads the Python poller. If it is missing or
+    # fails, load the poller from its kept agent file instead: never leave zero
+    # pollers.
+    if [ ! -x "$restore" ]; then
+      armed=1
+      restore_python "uninstall: $restore is missing or not executable"
+    fi
+    if ! "$restore"; then
+      restore_python "uninstall: $restore failed"
+    fi
+    say "uninstalled $label; Python poller restored"
+  fi
+  exit 0
+fi
+
+# 1. the speed bump
+if [ -z "$report" ]; then
+  echo "install-live: refused: pass --report PATH (the last scripts/shadow-compare report)" >&2
+  exit 1
+fi
+if [ ! -s "$report" ]; then
+  echo "install-live: refused: $report is missing or empty" >&2
+  exit 1
+fi
+say "report: $report ($(wc -l < "$report" | tr -d ' ') lines)"
+
+setting() { # key default
+  python3 -I - "$live_plist" "$1" "$2" << 'PYEOF'
+import plistlib, sys
+path, key, default = sys.argv[1:4]
+try:
+    with open(path, "rb") as f:
+        env = plistlib.load(f).get("EnvironmentVariables", {})
+    print(env.get(key, default))
+except Exception:
+    print(default)
+PYEOF
+}
+interval=$(setting CSWAP_AUTO_INTERVAL 300)
+threshold=$(setting CSWAP_AUTO_THRESHOLD 85)
+models=$(setting CSWAP_AUTO_MODEL "Fable,Opus")
+strategy=$(setting CSWAP_AUTO_STRATEGY best)
+
+render() {
+  sed -e "s|@BIN@|$dest_bin|g" -e "s|@INTERVAL@|$interval|g" -e "s|@THRESHOLD@|$threshold|g" \
+    -e "s|@MODELS@|$models|g" -e "s|@STRATEGY@|$strategy|g" -e "s|@HOME@|$home|g" \
+    -e "s|@STATE_DIR@|$state_dir|g" "$here/com.david.cswap-bend.plist.in"
+}
+
+say "settings (from $live_plist): interval=$interval threshold=$threshold models=$models strategy=$strategy"
+say "would: launchctl bootout gui/$uid/$python_label   (stop and unload the Python poller; its agent file stays)"
+say "would: launchctl bootout gui/$uid/$shadow_label and remove $shadow_agent (if present)"
+if [ -n "${LIVE_BIN:-}" ]; then
+  say "would: use the binary $LIVE_BIN (no build)"
+else
+  say "would: build bin/cswap-bend (just build) in $root"
+fi
+say "would: copy it to $dest_bin"
+say "would: create $state_dir"
+say "would: write $agent:"
+render | sed 's/^/    /'
+say "would: launchctl bootstrap gui/$uid $agent"
+say "undo: deploy/install-live --uninstall --live (restores the Python poller via $restore)"
+say "~/.claude-swap-backup is not touched"
+
+if [ "$live" = 1 ]; then
+  if [ -n "${LIVE_BIN:-}" ]; then
+    src_bin=$LIVE_BIN
+  else
+    (cd "$root" && just build)
+    src_bin=$root/bin/cswap-bend
+  fi
+  [ -x "$src_bin" ] || { echo "install-live: no binary at $src_bin; nothing was changed" >&2; exit 1; }
+  mkdir -p "$dest_dir" "$state_dir" "$agents"
+  cp "$src_bin" "$dest_bin"
+  chmod 755 "$dest_bin"
+  render > "$agent.tmp"
+  mv "$agent.tmp" "$agent"
+  # The binary and the agent file are ready: only now stop the Python poller.
+  # From here a failed step puts it back (on_exit), so no failure leaves zero
+  # pollers running.
+  armed=1
+  launchctl_ bootout "gui/$uid/$python_label" 2> /dev/null || true
+  launchctl_ bootout "gui/$uid/$shadow_label" 2> /dev/null || true
+  rm -f "$shadow_agent"
+  launchctl_ bootout "gui/$uid/$label" 2> /dev/null || true
+  if ! launchctl_ bootstrap "gui/$uid" "$agent"; then
+    restore_python "Bend load failed (launchctl bootstrap of $label failed)"
+  fi
+  if [ "${SHADOW_NO_LAUNCHCTL:-0}" != 1 ] && ! launchctl_ list 2> /dev/null | grep -q "$label"; then
+    restore_python "Bend load failed ($label is not listed after the bootstrap)"
+  fi
+  armed=0
+  say "installed $label ($sha); the Python poller $python_label is unloaded"
+fi

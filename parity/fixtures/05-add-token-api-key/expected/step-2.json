@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "activeAccountNumber": null,
+    "accounts": [
+      {
+        "number": 1,
+        "email": "api-key-1@token.local",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "api_key",
+        "usage": null
+      }
+    ]
+  },
+  "files": {},
+  "requests": []
+}

@@ -1,0 +1,22 @@
+{
+  "exit": 2,
+  "stdout": [
+    {
+      "schemaVersion": 1,
+      "event": "poll",
+      "ts": "<rel:+0>",
+      "active": null,
+      "headroomPct": {},
+      "threshold": 85.0
+    },
+    {
+      "schemaVersion": 1,
+      "event": "no-switch",
+      "ts": "<rel:+0>",
+      "reason": "unmanaged-active-account",
+      "detail": "run 'cswap --add-account' to include it in rotation"
+    }
+  ],
+  "files": {},
+  "requests": []
+}

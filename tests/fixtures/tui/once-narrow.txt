@@ -1,0 +1,21 @@
+cswap tui  cswap-bend 0.0.1
+○ auto-switch STOPPED · threshold 90% · every 60s
+
+ 1  work (owner@example.test)  [personal]   ● active
+    5h    ━━━━━━──────┃  47%  resets 2h 13m · 11:13
+    7d    ━━━━━━━━────┃  62%  resets 3d 4h · Oct 26 13:00
+    Opus  ━━━━━━━━━━━╸┃  91%  resets 3d · Oct 26 09:00
+    Fable ━━━━━━━━━━━━┃ 100%  resets 1h 30m · 10:30  (!)
+
+ 2  st2@example.test  [Acme Dev]   5h 92% · 7d 63%
+ 3  st3@example.test  [personal]   5h 100% (resets 25m) · 7…
+ 4  key4@example.test  [personal]   API key (no quota)
+ 5  st5@example.test  [personal]  (disabled)   http-429
+
+next best  2 st2@example.test · 8% free
+
+daemon log
+  08:57:45  info tick no-action
+  08:58:45  info tick no-action
+  08:59:45  warn tick blocked
+  not json at all

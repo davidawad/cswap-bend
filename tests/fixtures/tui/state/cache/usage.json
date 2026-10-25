@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "accounts": {
+    "1": {
+      "email": "owner@example.test",
+      "lastGood": {
+        "five_hour": {
+          "pct": 47.0,
+          "resets_at": "2026-10-23T11:13:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 62.5,
+          "resets_at": "2026-10-26T13:00:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "scoped": [
+          {
+            "name": "Opus",
+            "pct": 91.0,
+            "resets_at": "2026-10-26T09:00:00+00:00"
+          },
+          {
+            "name": "Fable",
+            "pct": 100.0,
+            "resets_at": "2026-10-23T10:30:00+00:00"
+          }
+        ]
+      },
+      "fetchedAt": 1792745969.8,
+      "lastError": null,
+      "backoffUntil": null
+    },
+    "2": {
+      "email": "st2@example.test",
+      "lastGood": {
+        "five_hour": {
+          "pct": 92.0,
+          "resets_at": "2026-10-23T09:50:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 63.0,
+          "resets_at": "2026-10-24T09:00:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": 1792745600.0,
+      "lastError": null,
+      "backoffUntil": null
+    },
+    "3": {
+      "email": "st3@example.test",
+      "lastGood": {
+        "five_hour": {
+          "pct": 100.0,
+          "resets_at": "2026-10-23T09:25:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 40.0,
+          "resets_at": "2026-10-25T09:00:00+00:00",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": 1792745940.0,
+      "lastError": null,
+      "backoffUntil": null
+    },
+    "5": {
+      "email": "st5@example.test",
+      "lastGood": null,
+      "fetchedAt": null,
+      "lastError": "http-429",
+      "backoffUntil": 1792746120
+    }
+  }
+}

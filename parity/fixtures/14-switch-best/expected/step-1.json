@@ -1,0 +1,36 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "switched": true,
+    "from": {
+      "number": 1,
+      "email": "owner@example.test"
+    },
+    "to": {
+      "number": 3,
+      "email": "st3@example.test"
+    },
+    "strategy": "best",
+    "reason": "switched",
+    "message": "Switched to Account-3 (st3@example.test)",
+    "warnings": []
+  },
+  "files": {
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "emailAddress": "st3@example.test",
+          "accountUuid": "",
+          "organizationUuid": null,
+          "organizationName": null
+        }
+      }
+    }
+  },
+  "requests": []
+}

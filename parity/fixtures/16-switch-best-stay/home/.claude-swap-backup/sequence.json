@@ -1,0 +1,56 @@
+{
+  "activeAccountNumber": 3,
+  "lastUpdated": "{{isoz:-86400}}",
+  "sequence": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "accounts": {
+    "1": {
+      "email": "owner@example.test",
+      "uuid": "00000000-0000-4000-8000-0000000000a1",
+      "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+      "organizationName": "owner@example.test's Organization",
+      "added": "{{isoz:-864000}}"
+    },
+    "2": {
+      "email": "st2@example.test",
+      "uuid": "",
+      "organizationUuid": "",
+      "organizationName": "",
+      "added": "{{isoz:-864000}}"
+    },
+    "3": {
+      "email": "st3@example.test",
+      "uuid": "",
+      "organizationUuid": "",
+      "organizationName": "",
+      "added": "{{isoz:-864000}}"
+    },
+    "4": {
+      "email": "st4@example.test",
+      "uuid": "",
+      "organizationUuid": "",
+      "organizationName": "",
+      "added": "{{isoz:-864000}}"
+    },
+    "5": {
+      "email": "st5@example.test",
+      "uuid": "",
+      "organizationUuid": "",
+      "organizationName": "",
+      "added": "{{isoz:-864000}}"
+    },
+    "6": {
+      "email": "st6@example.test",
+      "uuid": "",
+      "organizationUuid": "",
+      "organizationName": "",
+      "added": "{{isoz:-864000}}"
+    }
+  }
+}

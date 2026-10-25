@@ -1,0 +1,58 @@
+{
+  "exit": 0,
+  "stdout": null,
+  "files": {
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": null,
+        "lastUpdated": "<rel:+1>",
+        "sequence": [
+          1
+        ],
+        "accounts": {
+          "1": {
+            "email": "new@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "<rel:+1>"
+          }
+        }
+      }
+    },
+    ".claude-swap-backup/credentials/": {
+      "listing": [
+        ".creds-1-new@example.test.enc"
+      ]
+    },
+    ".claude-swap-backup/configs/": {
+      "listing": [
+        ".claude-config-1-new@example.test.json"
+      ]
+    },
+    ".claude-swap-backup/credentials/.creds-1-new@example.test.enc": {
+      "mode": "0o600",
+      "b64json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:new}}",
+          "scopes": [
+            "user:inference"
+          ]
+        }
+      }
+    },
+    ".claude-swap-backup/configs/.claude-config-1-new@example.test.json": {
+      "mode": "0o600",
+      "json": {
+        "oauthAccount": {
+          "emailAddress": "new@example.test",
+          "accountUuid": "",
+          "organizationUuid": null,
+          "organizationName": null
+        }
+      }
+    }
+  },
+  "requests": []
+}

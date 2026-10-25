@@ -1,0 +1,35 @@
+{
+  "exit": 0,
+  "stdout": null,
+  "files": {
+    ".claude-swap-backup/cache/usage.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 2,
+        "accounts": {
+          "2": {
+            "email": "st2@example.test",
+            "organizationUuid": "",
+            "lastGood": {
+              "five_hour": {
+                "pct": 44.0,
+                "countdown": "<volatile>",
+                "clock": "<volatile>",
+                "resets_at": "{{iso:+3000}}"
+              },
+              "seven_day": {
+                "pct": 55.0,
+                "countdown": "<volatile>",
+                "clock": "<volatile>",
+                "resets_at": "{{iso:+200000}}"
+              }
+            },
+            "fetchedAt": "<rel:-20>",
+            "heldUntil": "<rel:+600>"
+          }
+        }
+      }
+    }
+  },
+  "requests": []
+}

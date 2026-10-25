@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.david.cswap-bend</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>@BIN@</string>
+		<string>auto</string>
+		<string>--interval</string>
+		<string>@INTERVAL@</string>
+		<string>--threshold</string>
+		<string>@THRESHOLD@</string>
+		<string>--model</string>
+		<string>@MODELS@</string>
+		<string>--strategy</string>
+		<string>@STRATEGY@</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>@HOME@</string>
+		<key>PATH</key>
+		<string>@HOME@/.local/bin:@HOME@/.nix-profile/bin:/etc/profiles/per-user/david/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>StandardOutPath</key>
+	<string>@STATE_DIR@/stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>@STATE_DIR@/stderr.log</string>
+</dict>
+</plist>

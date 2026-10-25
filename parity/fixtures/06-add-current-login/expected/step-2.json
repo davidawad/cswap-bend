@@ -1,0 +1,127 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "active": {
+      "number": 1,
+      "email": "owner@example.test",
+      "organizationName": "owner@example.test's Organization",
+      "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+      "isOrganization": true,
+      "managed": true,
+      "usageStatus": "ok",
+      "usage": {
+        "fiveHour": {
+          "pct": 12.0,
+          "resetsAt": "{{iso:+5400}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>"
+        },
+        "sevenDay": {
+          "pct": 40.0,
+          "resetsAt": "{{iso:+259200}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>",
+          "expectedPct": 57.1,
+          "aheadOfPace": false,
+          "projectedExhaustionAt": "<rel:+518403>",
+          "willLastToReset": true
+        },
+        "scoped": [
+          {
+            "pct": 33.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+701676>",
+            "willLastToReset": true,
+            "name": "Opus"
+          },
+          {
+            "pct": 12.5,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+2419210>",
+            "willLastToReset": true,
+            "name": "Fable"
+          }
+        ]
+      },
+      "usageFetchedAt": "<rel:+1>",
+      "usageAgeSeconds": "<volatile>"
+    },
+    "totalManagedAccounts": 1
+  },
+  "files": {
+    ".claude-swap-backup/cache/usage.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 2,
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "authDeadStrikes": 0,
+            "struckFingerprint": null,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "lastAttemptAt": "<rel:+1>",
+            "lastGood": {
+              "five_hour": {
+                "pct": 12.0,
+                "resets_at": "{{iso:+5400}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 40.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "scoped": [
+                {
+                  "name": "Opus",
+                  "pct": 33.0,
+                  "resets_at": "{{iso:+259200}}",
+                  "countdown": "<volatile>",
+                  "clock": "<volatile>"
+                },
+                {
+                  "name": "Fable",
+                  "pct": 12.5,
+                  "resets_at": "{{iso:+259200}}",
+                  "countdown": "<volatile>",
+                  "clock": "<volatile>"
+                }
+              ]
+            },
+            "fetchedAt": "<rel:+1>",
+            "nextPollAt": "<rel:+170>",
+            "pollIntervalS": 180.0,
+            "rejectedFingerprint": null
+          }
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/usage",
+      "auth": "full_at",
+      "headers": {
+        "anthropic-beta": "oauth-2025-04-20"
+      },
+      "body": null
+    }
+  ]
+}

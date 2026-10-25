@@ -1,0 +1,169 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "activeAccountNumber": 1,
+    "accounts": [
+      {
+        "number": 1,
+        "email": "owner@example.test",
+        "organizationName": "owner@example.test's Organization",
+        "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+        "isOrganization": true,
+        "active": true,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 20.0,
+            "resetsAt": "{{iso:+7200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 40.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+518325>",
+            "willLastToReset": true
+          },
+          "scoped": [
+            {
+              "pct": 30.0,
+              "resetsAt": "{{iso:+259200}}",
+              "countdown": "<volatile>",
+              "clock": "<volatile>",
+              "expectedPct": 57.1,
+              "aheadOfPace": false,
+              "projectedExhaustionAt": "<rel:+806300>",
+              "willLastToReset": true,
+              "name": "Opus"
+            }
+          ]
+        },
+        "usageFetchedAt": "{{isoz:-30}}",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 2,
+        "email": "st2@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 10.0,
+            "resetsAt": "{{iso:+7200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 30.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+806300>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "{{isoz:-30}}",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 3,
+        "email": "st3@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 5.0,
+            "resetsAt": "{{iso:+7200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 10.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+3110100>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "{{isoz:-30}}",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 4,
+        "email": "st4@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 50.0,
+            "resetsAt": "{{iso:+7200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 60.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+230350>",
+            "willLastToReset": false
+          }
+        },
+        "usageFetchedAt": "{{isoz:-30}}",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 5,
+        "email": "st5@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 70.0,
+            "resetsAt": "{{iso:+7200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 20.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+1382250>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "{{isoz:-30}}",
+        "usageAgeSeconds": "<volatile>"
+      }
+    ]
+  },
+  "files": {},
+  "requests": []
+}

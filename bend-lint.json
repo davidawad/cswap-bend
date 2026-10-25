@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "style/file-length": { "maxLines": 500, "severity": "error" },
+    "dead/def": { "severity": "error", "entries": "*" },
+    "complexity/cyclomatic": { "max": 10, "severity": "error" },
+    "complexity/cognitive": { "max": 15, "severity": "error" },
+    "graph/fan_out": { "max": 10, "severity": "error" },
+    "graph/fan_in": { "max": 20, "severity": "error" }
+  }
+}

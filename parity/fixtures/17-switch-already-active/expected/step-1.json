@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "switched": false,
+    "from": {
+      "number": 1,
+      "email": "owner@example.test"
+    },
+    "to": {
+      "number": 1,
+      "email": "owner@example.test"
+    },
+    "strategy": "direct",
+    "reason": "already-active",
+    "message": "Already on Account-1 (owner@example.test)",
+    "warnings": []
+  },
+  "files": {},
+  "requests": []
+}

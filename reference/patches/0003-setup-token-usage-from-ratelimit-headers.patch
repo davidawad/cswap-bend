@@ -1,0 +1,127 @@
+--- a/src/claude_swap/oauth.py
++++ b/src/claude_swap/oauth.py
+@@ -394,8 +394,89 @@
+     return None
+ 
+ 
++SETUP_TOKEN_PROBE_MODEL = "claude-haiku-5-5"
++_RL = "anthropic-ratelimit-unified-"
++
++# Fingerprints of access tokens the usage endpoint refused for scope
++# (setup-tokens are user:inference only). Those go straight to the
++# inference-header probe instead of spending a 403 every poll.
++_inference_only_tokens: set[str] = set()
++
++
++def _token_key(access_token: str) -> str:
++    return hashlib.sha256(access_token.encode()).hexdigest()
++
++
++def _is_scope_error(e: urllib.error.HTTPError) -> bool:
++    if e.code != 403:
++        return False
++    try:
++        body = e.read().decode(errors="replace")
++    except Exception:
++        return False
++    return "oauth_scope_insufficient" in body or "scope requirement" in body
++
++
++def usage_from_ratelimit_headers(headers) -> dict | None:
++    """Map ``anthropic-ratelimit-unified-*`` response headers to the
++    /api/oauth/usage shape (utilization 0-100, ISO ``resets_at``)."""
++
++    def window(prefix: str) -> dict | None:
++        util = headers.get(f"{_RL}{prefix}-utilization")
++        if util is None:
++            return None
++        entry: dict = {"utilization": round(float(util) * 100, 1)}
++        reset = headers.get(f"{_RL}{prefix}-reset")
++        if reset:
++            entry["resets_at"] = datetime.fromtimestamp(
++                int(reset), tz=timezone.utc
++            ).isoformat()
++        return entry
++
++    data = {k: w for k, w in (("five_hour", window("5h")), ("seven_day", window("7d"))) if w}
++    return data or None
++
++
++def request_usage_via_inference(access_token: str) -> dict:
++    """Usage for an inference-only (setup-token) credential: a 1-token
++    Messages call whose rate-limit headers carry the same 5h/7d utilization
++    the usage endpoint reports. An exhausted account answers 429 but still
++    sends the headers, which is a valid reading."""
++    body = json.dumps({
++        "model": SETUP_TOKEN_PROBE_MODEL,
++        "max_tokens": 1,
++        "system": [{"type": "text", "text": "You are Claude Code, Anthropic's official CLI for Claude."}],
++        "messages": [{"role": "user", "content": "."}],
++    }).encode()
++    req = urllib.request.Request(
++        "https://api.anthropic.com/v1/messages",
++        data=body,
++        headers={
++            "Authorization": f"Bearer {access_token}",
++            "anthropic-version": "2023-06-01",
++            "anthropic-beta": f"claude-code-20250219,{OAUTH_BETA_HEADER}",
++            "content-type": "application/json",
++            "User-Agent": "claude-swap/1.0",
++        },
++    )
++    try:
++        with urllib.request.urlopen(req, timeout=20) as resp:
++            data = usage_from_ratelimit_headers(resp.headers)
++    except urllib.error.HTTPError as e:
++        data = usage_from_ratelimit_headers(e.headers) if e.headers else None
++        if data is None:
++            raise
++    if data is None:
++        raise json.JSONDecodeError("no ratelimit headers", "", 0)
++    return data
++
++
+ def request_usage_data(access_token: str) -> dict:
+-    """Request raw utilization data from the Anthropic usage API."""
++    """Request raw utilization data from the Anthropic usage API, falling
++    back to inference rate-limit headers for inference-only tokens."""
++    key = _token_key(access_token)
++    if key in _inference_only_tokens:
++        return request_usage_via_inference(access_token)
+     url = "https://api.anthropic.com/api/oauth/usage"
+     headers = {
+         "Authorization": f"Bearer {access_token}",
+@@ -403,8 +484,21 @@
+         "User-Agent": "claude-swap/1.0",
+     }
+     req = urllib.request.Request(url, headers=headers)
+-    with urllib.request.urlopen(req, timeout=5) as resp:
+-        return json.loads(resp.read().decode())
++    try:
++        with urllib.request.urlopen(req, timeout=5) as resp:
++            return json.loads(resp.read().decode())
++    except urllib.error.HTTPError as e:
++        if _is_scope_error(e):
++            _inference_only_tokens.add(key)
++            return request_usage_via_inference(access_token)
++        if e.code != 429:
++            raise
++        # The usage endpoint's budget is separate from inference; the
++        # headers answer the same question, so a 429 here is not a blind spot.
++        try:
++            return request_usage_via_inference(access_token)
++        except Exception:
++            raise e
+ 
+ 
+ def _classify_usage_error(e: Exception) -> tuple[str, float | None]:
+@@ -661,6 +755,9 @@
+ 
+     working_credentials = credentials
+ 
++    if "user:profile" not in (oauth.get("scopes") or ["user:profile"]):
++        _inference_only_tokens.add(_token_key(access_token))
++
+     if (
+         not is_active
+         and oauth.get("refreshToken")

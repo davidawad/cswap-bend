@@ -1,0 +1,51 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "active": {
+      "number": 1,
+      "email": "owner@example.test",
+      "organizationName": "owner@example.test's Organization",
+      "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+      "isOrganization": true,
+      "managed": true,
+      "usageStatus": "ok",
+      "usage": {
+        "fiveHour": {
+          "pct": 20.0,
+          "resetsAt": "{{iso:+7200}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>"
+        },
+        "sevenDay": {
+          "pct": 40.0,
+          "resetsAt": "{{iso:+259200}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>",
+          "expectedPct": 57.1,
+          "aheadOfPace": false,
+          "projectedExhaustionAt": "<rel:+518325>",
+          "willLastToReset": true
+        },
+        "scoped": [
+          {
+            "pct": 30.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+806300>",
+            "willLastToReset": true,
+            "name": "Opus"
+          }
+        ]
+      },
+      "usageFetchedAt": "{{isoz:-30}}",
+      "usageAgeSeconds": "<volatile>"
+    },
+    "totalManagedAccounts": 6
+  },
+  "files": {},
+  "requests": []
+}

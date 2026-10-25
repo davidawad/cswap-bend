@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "key": "autoswitch.threshold",
+    "value": 85.0,
+    "isSet": true
+  },
+  "files": {},
+  "requests": []
+}

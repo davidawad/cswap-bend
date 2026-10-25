@@ -1,0 +1,22 @@
+--- a/src/claude_swap/autoswitch.py
++++ b/src/claude_swap/autoswitch.py
+@@ -1032,6 +1032,19 @@
+                 )
+             else:
+                 self._idle_hold_since = None
++                # Unknown headroom is not a signal that the active account is
++                # out of quota (setup-token accounts never report usage), so it
++                # never counts toward failover: log it and hold. Failover needs
++                # a real signal -- known headroom at the limit, or the expired
++                # token held past IDLE_HOLD_MAX_S that falls through above.
++                self._unhealthy_ticks = 0
++                self._emit(
++                    NoSwitchEvent(
++                        reason="active-usage-unknown",
++                        detail="headroom unknown; not counted toward failover",
++                    )
++                )
++                return TickOutcome.NO_ACTION
+             self._unhealthy_ticks += 1
+             if self._unhealthy_ticks < settings.unhealthy_ticks:
+                 self._emit(

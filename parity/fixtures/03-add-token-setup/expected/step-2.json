@@ -1,0 +1,106 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "activeAccountNumber": null,
+    "accounts": [
+      {
+        "number": 1,
+        "email": "new@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 6.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 31.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+769243>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      }
+    ]
+  },
+  "files": {
+    ".claude-swap-backup/cache/usage.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 2,
+        "accounts": {
+          "1": {
+            "email": "new@example.test",
+            "organizationUuid": "",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "authDeadStrikes": 0,
+            "struckFingerprint": null,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "lastAttemptAt": "<rel:+2>",
+            "lastGood": {
+              "five_hour": {
+                "pct": 6.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 31.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+312>",
+            "pollIntervalS": 300.0,
+            "rejectedFingerprint": null
+          }
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "new",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    }
+  ]
+}

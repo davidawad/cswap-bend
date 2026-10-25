@@ -1,0 +1,162 @@
+{
+  "exit": 2,
+  "stdout": [
+    {
+      "schemaVersion": 1,
+      "event": "poll",
+      "ts": "<rel:+0>",
+      "active": {
+        "number": 1,
+        "email": "owner@example.test"
+      },
+      "headroomPct": {
+        "1": 10.0,
+        "2": 70.0,
+        "3": 90.0,
+        "4": 40.0,
+        "5": 30.0,
+        "6": 5.0
+      },
+      "threshold": 85.0,
+      "windowsPct": {
+        "1": {
+          "5h": 90.0,
+          "7d": 40.0
+        },
+        "2": {
+          "5h": 10.0,
+          "7d": 30.0
+        },
+        "3": {
+          "5h": 5.0,
+          "7d": 10.0
+        },
+        "4": {
+          "5h": 50.0,
+          "7d": 60.0
+        },
+        "5": {
+          "5h": 70.0,
+          "7d": 20.0
+        },
+        "6": {
+          "5h": 1.0,
+          "7d": 95.0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "event": "no-switch",
+      "ts": "<rel:+0>",
+      "reason": "cooldown",
+      "detail": ""
+    }
+  ],
+  "files": {
+    ".claude-swap-backup/autoswitch_state.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 1,
+        "lastSwitchAt": "{{epoch:-60}}",
+        "lastSwitchTo": "1",
+        "lastSwitchFrom": 4,
+        "leftHeadroom": 2.0,
+        "leftRecoveryAt": null,
+        "leftTrigger": "proactive"
+      }
+    },
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "accountUuid": "00000000-0000-4000-8000-0000000000a1",
+          "emailAddress": "owner@example.test",
+          "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+          "organizationName": "owner@example.test's Organization",
+          "displayName": "Owner",
+          "organizationRole": "admin"
+        }
+      }
+    },
+    ".claude/.credentials.json": {
+      "mode": "0o600",
+      "json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:full_at}}",
+          "refreshToken": "{{tok:full_rt}}",
+          "expiresAt": "{{ms:+28800}}",
+          "scopes": [
+            "user:inference",
+            "user:profile",
+            "user:sessions:claude_code"
+          ],
+          "subscriptionType": "max"
+        }
+      }
+    },
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 1,
+        "lastUpdated": "{{isoz:-86400}}",
+        "sequence": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "{{isoz:-864000}}"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "3": {
+            "email": "st3@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "4": {
+            "email": "st4@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "5": {
+            "email": "st5@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "6": {
+            "email": "st6@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          }
+        }
+      }
+    }
+  },
+  "requests": []
+}

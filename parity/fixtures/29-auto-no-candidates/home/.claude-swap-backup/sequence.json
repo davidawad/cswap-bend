@@ -1,0 +1,16 @@
+{
+  "activeAccountNumber": 1,
+  "lastUpdated": "{{isoz:-86400}}",
+  "sequence": [
+    1
+  ],
+  "accounts": {
+    "1": {
+      "email": "owner@example.test",
+      "uuid": "00000000-0000-4000-8000-0000000000a1",
+      "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+      "organizationName": "owner@example.test's Organization",
+      "added": "{{isoz:-864000}}"
+    }
+  }
+}

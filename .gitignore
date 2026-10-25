@@ -1,0 +1,6 @@
+.worktrees/
+bin/
+scratch/
+*.tmp
+reference/src/
+__pycache__/

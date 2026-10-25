@@ -1,0 +1,593 @@
+#!/usr/bin/env python3
+"""Replay the cswap golden parity fixtures against any cswap-compatible CLI.
+
+    docs/cswap-bend/replay [options] /path/to/cswap
+
+Each fixture under fixtures/<name>/ is a scratch HOME (home/), a fixture.json
+(argv per step, stdin, stubbed HTTP routes, what to capture) and a golden
+expected/step-<n>.json recorded from the reference (Python cswap 0.27.2 +
+patches 0001-0003). For every step the script:
+
+  1. seeds a fresh HOME from home/ (templates rendered, see below),
+  2. starts a local stub HTTP server and exports CSWAP_TEST_HTTP_BASE,
+  3. runs `<cli> <argv...>` with HOME, NO_COLOR, TZ=UTC and the seam env,
+  4. compares exit code, stdout (JSON / JSONL / substrings), captured files
+     and the HTTP requests the CLI made against the golden,
+  5. fails the step if any fake token appears on stdout or stderr.
+
+and prints one PASS/FAIL line per fixture (JSON lines with --json). Exit 0
+iff every selected fixture passed.
+
+Options:
+  --only NAME[,NAME]  run only these fixtures (substring match)
+  --record            (re)write expected/ from this CLI; use with the reference
+  --strict            objects must match exactly (default: golden keys must be
+                      present and equal, extra keys in the actual output are
+                      allowed, since cswap JSON is additive by contract)
+  --keep              keep scratch HOMEs and print their paths
+  --verbose           print every diff, not just the first few
+  --json              one JSON object per fixture on stdout
+
+Templates (in home/ files, fixture.json http bodies/headers and goldens):
+  {{epoch:+N}} {{ms:+N}} {{iso:+N}} {{isoz:+N}}   now+N seconds (N may be
+      negative or 0) as integer epoch seconds, epoch ms, ISO with +00:00, ISO
+      with Z. `now` is fixed once per fixture (whole seconds) and shared by
+      all its steps.
+  {{tok:NAME}}   the fake token NAME from fixture.json "tokens" (every value
+      must contain FAKE).
+  {{home}}       the scratch HOME path.
+A seed .json file that parses is rendered structurally (a string that is exactly
+one epoch/ms token becomes a number); other files are rendered as text.
+A seed file named X.b64src is written as X containing base64(rendered X.b64src)
+(that is how .enc credential backups are stored).
+
+Normalisation: keys whose values are derived from the CLI's own clock (see
+VOLATILE_KEYS) are recorded as "<rel:+N>" (a timestamp N seconds after the
+fixture's now; matched within 15s + 22% for runtime and poll jitter) or as
+"<volatile>" (presence only: countdown strings, ages, random ids).
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import datetime as dt
+import http.server
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+FIXTURES = HERE / "fixtures"
+SEAM_PY = HERE / "seam" / "python"
+
+VOLATILE = "<volatile>"
+# Values derived from the CLI's own clock (or random) at run time, recorded
+# as <rel:+N> or <volatile>. Anything echoed from the seed stays exact via templates.
+VOLATILE_KEYS = {
+    "ts", "countdown", "clock", "until", "seconds", "at",
+    "usageAgeSeconds", "lastGoodAgeSeconds", "usageFetchedAt",
+    "lastGoodFetchedAt", "usageRetryAt", "projectedExhaustionAt",
+    "lastUpdated", "added", "fetchedAt", "lastAttemptAt", "nextPollAt",
+    "backoffUntil", "claimId", "claimUntil", "last429At", "lastSwitchAt",
+    "heldUntil", "createdAt",
+}
+DURATION_KEYS = {"usageAgeSeconds", "lastGoodAgeSeconds", "seconds"}
+TEMPLATE_RE = re.compile(r"\{\{(epoch|ms|iso|isoz|tok|home)(?::([+-]?\d+|[A-Za-z0-9_-]+))?\}\}")
+LOCKISH = re.compile(r"(\.lock$|\.tmp$|^claude-swap\.log)")
+
+
+# ---------------------------------------------------------------- templates
+
+class Ctx:
+    def __init__(self, now: int, home: Path, tokens: dict[str, str]):
+        self.now = now
+        self.home = home
+        self.tokens = tokens
+        self.rendered: dict[str, str] = {}  # rendered value (str) -> token
+
+    def value(self, kind: str, arg: str | None) -> str:
+        if kind == "home":
+            out = str(self.home)
+        elif kind == "tok":
+            out = self.tokens[arg]
+        else:
+            t = self.now + int(arg or 0)
+            stamp = dt.datetime.fromtimestamp(t, tz=dt.timezone.utc)
+            forms = {
+                "epoch": str(t),
+                "ms": str(t * 1000),
+                "iso": stamp.isoformat(),
+                "isoz": stamp.isoformat().replace("+00:00", "Z"),
+            }
+            # Register every format: an epoch stubbed in a header comes back
+            # as ISO in the CLI's output, and should record as the same instant.
+            for form, value in forms.items():
+                self.rendered.setdefault(value, "{{%s:%s}}" % (form, arg))
+            return forms[kind]
+        token = "{{%s%s}}" % (kind, f":{arg}" if arg is not None else "")
+        if kind != "home":
+            self.rendered.setdefault(out, token)
+        return out
+
+    def render(self, text: str) -> str:
+        return TEMPLATE_RE.sub(lambda m: self.value(m.group(1), m.group(2)), text)
+
+    def render_obj(self, obj):
+        """Render templates inside a JSON value. A string that is exactly one
+        epoch/ms token becomes a number."""
+        if isinstance(obj, dict):
+            return {k: self.render_obj(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self.render_obj(v) for v in obj]
+        if isinstance(obj, str):
+            m = TEMPLATE_RE.fullmatch(obj)
+            if m and m.group(1) in ("epoch", "ms"):
+                return int(self.value(m.group(1), m.group(2)))
+            return self.render(obj)
+        return obj
+
+    def unrender_obj(self, obj):
+        """Inverse for recording: rendered values back to their tokens."""
+        if isinstance(obj, dict):
+            return {k: self.unrender_obj(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self.unrender_obj(v) for v in obj]
+        if isinstance(obj, bool) or obj is None:
+            return obj
+        if isinstance(obj, (int, float)) and float(obj).is_integer():
+            tok = self.rendered.get(str(int(obj)))
+            if tok and tok.startswith(("{{epoch", "{{ms")):
+                return tok
+            return obj
+        if isinstance(obj, str):
+            if obj in self.rendered:
+                return self.rendered[obj]
+            out = obj.replace(str(self.home), "{{home}}")
+            for value, tok in self.tokens_by_value():
+                out = out.replace(value, tok)
+            return out
+        return obj
+
+    def tokens_by_value(self):
+        return [(v, "{{tok:%s}}" % k) for k, v in self.tokens.items()]
+
+
+# ---------------------------------------------------------------- stub HTTP
+
+class Stub:
+    def __init__(self, routes: list[dict], ctx: Ctx):
+        self.routes = [dict(r, _used=0) for r in routes]
+        self.ctx = ctx
+        self.requests: list[dict] = []
+        self.lock = threading.Lock()
+        stub = self
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def _serve(self):
+                length = int(self.headers.get("Content-Length") or 0)
+                raw = self.rfile.read(length) if length else b""
+                # path is /<host>/<path...>
+                url = "https://" + self.path.lstrip("/").split("?", 1)[0]
+                auth = stub.auth_name(self.headers.get("Authorization"))
+                try:
+                    body = json.loads(raw) if raw else None
+                except ValueError:
+                    body = raw.decode("utf-8", "replace")
+                hdrs = {
+                    k.lower(): v for k, v in self.headers.items()
+                    if k.lower() in ("anthropic-beta", "anthropic-version", "content-type")
+                }
+                route = stub.match(self.command, url, auth)
+                with stub.lock:
+                    stub.requests.append({
+                        "method": self.command, "url": url, "auth": auth,
+                        "headers": hdrs, "body": stub.ctx.unrender_obj(body),
+                        "stubbed": route is not None,
+                    })
+                if route is None:
+                    status, headers, payload = 599, {}, {"error": "unstubbed request"}
+                else:
+                    status = route.get("status", 200)
+                    headers = stub.ctx.render_obj(route.get("headers", {}))
+                    payload = stub.ctx.render_obj(route.get("body", {}))
+                data = payload.encode() if isinstance(payload, str) else json.dumps(payload).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                for k, v in headers.items():
+                    self.send_header(k, str(v))
+                self.end_headers()
+                self.wfile.write(data)
+
+            do_GET = do_POST = do_PUT = do_DELETE = _serve
+
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+
+    def auth_name(self, header: str | None) -> str | None:
+        if not header:
+            return None
+        value = header.split(" ", 1)[-1].strip()
+        for name, tok in self.ctx.tokens.items():
+            if tok == value:
+                return name
+        return "<unknown>"
+
+    def match(self, method: str, url: str, auth: str | None):
+        with self.lock:
+            for r in self.routes:
+                if r.get("method", "GET") != method or r["url"] != url:
+                    continue
+                if "auth" in r and r["auth"] != auth:
+                    continue
+                if "times" in r and r["_used"] >= r["times"]:
+                    continue
+                r["_used"] += 1
+                return r
+        return None
+
+    @property
+    def base(self) -> str:
+        return "http://127.0.0.1:%d" % self.server.server_address[1]
+
+    def __enter__(self):
+        self.thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+# ---------------------------------------------------------------- seeding
+
+def seed_home(src: Path, home: Path, ctx: Ctx) -> None:
+    home.mkdir(parents=True, exist_ok=True)
+    if not src.is_dir():
+        return
+    for path in sorted(src.rglob("*")):
+        rel = path.relative_to(src)
+        dest = home / rel
+        if path.is_dir():
+            dest.mkdir(parents=True, exist_ok=True)
+            os.chmod(dest, 0o700)
+            continue
+        if path.name == ".keep":
+            continue
+        raw = path.read_text()
+        try:
+            # Structured render so "{{epoch:N}}" strings become JSON numbers.
+            text = json.dumps(ctx.render_obj(json.loads(raw)), indent=2) if path.suffix == ".json" else None
+        except ValueError:
+            text = None
+        if text is None:
+            text = ctx.render(raw)
+        if dest.suffix == ".b64src":
+            dest = dest.with_suffix("")
+            text = base64.b64encode(text.encode()).decode()
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text)
+        os.chmod(dest, 0o600)
+
+
+# ---------------------------------------------------------------- capture
+
+def capture_path(home: Path, rel: str):
+    p = home / rel
+    if rel.endswith("/"):
+        if not p.is_dir():
+            return {"absent": True}
+        # Dot-directories (credentials/.removed/, where Bend archives instead of
+        # deleting) are not listing entries: contract section 2.4.
+        names = sorted(n.name for n in p.iterdir()
+                       if not LOCKISH.search(n.name) and not (n.name.startswith(".") and n.is_dir()))
+        return {"listing": names}
+    if not p.exists():
+        return {"absent": True}
+    out: dict = {"mode": oct(stat.S_IMODE(p.stat().st_mode))}
+    raw = p.read_bytes()
+    if p.suffix in (".enc", ".prev"):
+        decoded = base64.b64decode(raw.strip(), validate=True).decode()
+        try:
+            out["b64json"] = json.loads(decoded)
+        except ValueError:
+            out["b64text"] = decoded
+        return out
+    try:
+        out["json"] = json.loads(raw)
+    except ValueError:
+        out["text"] = raw.decode("utf-8", "replace")
+    return out
+
+
+# ---------------------------------------------------------------- normalise / compare
+
+REL_RE = re.compile(r"^<rel:([+-]\d+)>$")
+
+
+def _epoch_of(v) -> float | None:
+    """Epoch seconds of a clock value: a number past 2001, or an ISO string."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v) if v > 1e9 else None
+    if isinstance(v, str):
+        try:
+            return dt.datetime.fromisoformat(v.replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
+def _volatile(k: str, v, now: int):
+    """Record form of a clock-derived value: <rel:+N> (seconds from the step's
+    now) when it is a timestamp, else <volatile>. Small numbers stay exact."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v) < 1e9:
+        return VOLATILE if k in DURATION_KEYS else v
+    t = _epoch_of(v)
+    return "<rel:%+d>" % round(t - now) if t is not None else VOLATILE
+
+
+def _rel_ok(v, golden: str, now: int) -> bool:
+    # The CLI runs seconds after `now`, and poll plans carry +-10% jitter on
+    # both the golden sample and the actual one.
+    want = int(REL_RE.match(golden).group(1))
+    t = _epoch_of(v)
+    return t is not None and abs((t - now) - want) <= 15 + 0.22 * abs(want)
+
+
+def mask(obj, golden=None, now: int = 0):
+    """Record mode (golden None): replace clock-derived values (VOLATILE_KEYS)
+    with <volatile> or <rel:+N>. Compare mode: where the golden holds such a
+    marker, replace the actual value with the marker if it matches."""
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            if golden is None:
+                is_tok = isinstance(v, str) and TEMPLATE_RE.fullmatch(v)
+                volatile = k in VOLATILE_KEYS and v is not None and not is_tok
+                out[k] = _volatile(k, v, now) if volatile else mask(v, None, now)
+                continue
+            g = golden.get(k) if isinstance(golden, dict) else None
+            if g == VOLATILE:
+                out[k] = VOLATILE
+            elif isinstance(g, str) and REL_RE.match(g):
+                out[k] = g if _rel_ok(v, g, now) else v
+            else:
+                out[k] = mask(v, g if g is not None else {}, now)
+        return out
+    if isinstance(obj, list):
+        if golden is None:
+            return [mask(v, None, now) for v in obj]
+        return [mask(v, golden[i] if isinstance(golden, list) and i < len(golden) else {}, now)
+                for i, v in enumerate(obj)]
+    return obj
+
+
+def diff(golden, actual, path="$", strict=False, out=None):
+    out = [] if out is None else out
+    if golden == VOLATILE:
+        return out
+    if isinstance(golden, dict) and isinstance(actual, dict):
+        for k, gv in golden.items():
+            if k not in actual:
+                out.append(f"{path}.{k}: missing (expected {json.dumps(gv)[:120]})")
+            else:
+                diff(gv, actual[k], f"{path}.{k}", strict, out)
+        if strict:
+            for k in actual.keys() - golden.keys():
+                out.append(f"{path}.{k}: unexpected key")
+        return out
+    if isinstance(golden, list) and isinstance(actual, list):
+        if len(golden) != len(actual):
+            out.append(f"{path}: length {len(actual)} != expected {len(golden)}")
+        for i, (g, a) in enumerate(zip(golden, actual)):
+            diff(g, a, f"{path}[{i}]", strict, out)
+        return out
+    if isinstance(golden, float) or isinstance(actual, float):
+        if isinstance(golden, (int, float)) and isinstance(actual, (int, float)) \
+                and not isinstance(golden, bool) and not isinstance(actual, bool) \
+                and abs(golden - actual) <= 1e-6:
+            return out
+    if golden != actual or type(golden) is not type(actual) and not (
+            isinstance(golden, (int, float)) and isinstance(actual, (int, float))):
+        out.append(f"{path}: {json.dumps(actual)[:160]} != expected {json.dumps(golden)[:160]}")
+    return out
+
+
+def diff_requests(golden: list, actual: list, strict: bool) -> list[str]:
+    out = []
+    pool = list(actual)
+    for g in golden:
+        hit = None
+        for i, a in enumerate(pool):
+            if (a["method"], a["url"], a["auth"]) != (g["method"], g["url"], g["auth"]):
+                continue
+            if diff(g.get("headers", {}), a["headers"]) or diff(g.get("body"), a["body"]):
+                continue
+            hit = i
+            break
+        if hit is None:
+            out.append(f"request not made: {g['method']} {g['url']} auth={g['auth']}")
+        else:
+            pool.pop(hit)
+    for a in pool:
+        out.append(f"unexpected request: {a['method']} {a['url']} auth={a['auth']}")
+    return out
+
+
+def parse_stdout(kind: str, text: str):
+    if kind == "json":
+        return json.loads(text)
+    if kind == "jsonl":
+        return [json.loads(line) for line in text.splitlines() if line.strip()]
+    return None
+
+
+# ---------------------------------------------------------------- runner
+
+def run_step(cli: list[str], fx_dir: Path, idx: int, step: dict, ctx: Ctx,
+             args) -> tuple[list[str], dict]:
+    home, now = ctx.home, ctx.now
+    if idx == 0:
+        seed_home(fx_dir / "home", home, ctx)
+    for rel, content in step.get("write", {}).items():
+        p = home / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(ctx.render(content if isinstance(content, str) else json.dumps(content, indent=2)))
+    routes = step.get("http", [])
+    env = {
+        "HOME": str(home),
+        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "NO_COLOR": "1",
+        "TZ": "UTC",
+        "LC_ALL": "C.UTF-8",
+        "LANG": "C.UTF-8",
+        "PYTHONPATH": str(SEAM_PY),
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+    env.update({k: ctx.render(v) for k, v in step.get("env", {}).items()})
+    with Stub(routes, ctx) as stub:
+        env["CSWAP_TEST_HTTP_BASE"] = stub.base
+        argv = [ctx.render(a) for a in step["argv"]]
+        stdin = ctx.render(step.get("stdin", ""))
+        try:
+            proc = subprocess.run(cli + argv, input=stdin, capture_output=True, text=True,
+                                  env=env, cwd=home, timeout=step.get("timeout", 90))
+        except subprocess.TimeoutExpired:
+            return [f"timed out after {step.get('timeout', 90)}s"], {}
+        requests = list(stub.requests)
+
+    problems: list[str] = []
+    for name, tok in ctx.tokens.items():
+        for stream, text in (("stdout", proc.stdout), ("stderr", proc.stderr)):
+            if tok in text:
+                problems.append(f"SECRET LEAK: token {name} printed on {stream}")
+
+    if (home / ".local" / "share" / "claude-swap").exists():
+        problems.append("state written under ~/.local/share/claude-swap; the contract root is ~/.claude-swap-backup")
+
+    kind = step.get("stdout", "json")
+    try:
+        parsed = parse_stdout(kind, proc.stdout)
+    except ValueError as e:
+        problems.append(f"stdout is not {kind}: {e}: {proc.stdout[:300]!r}")
+        parsed = None
+    for needle in step.get("stdout_contains", []):
+        if ctx.render(needle) not in proc.stdout:
+            problems.append(f"stdout lacks {needle!r}")
+    for needle in step.get("stderr_contains", []):
+        if ctx.render(needle) not in proc.stderr:
+            problems.append(f"stderr lacks {needle!r}")
+
+    actual = {
+        "exit": proc.returncode,
+        "stdout": ctx.unrender_obj(parsed),
+        "files": {rel: ctx.unrender_obj(capture_path(home, rel)) for rel in step.get("capture", [])},
+        "requests": [{k: v for k, v in r.items() if k != "stubbed"} for r in requests],
+    }
+    unstubbed = [r for r in requests if not r["stubbed"]]
+
+    golden_path = fx_dir / "expected" / f"step-{idx + 1}.json"
+    if args.record:
+        golden = mask(actual, None, now)
+        golden_path.parent.mkdir(exist_ok=True)
+        golden_path.write_text(json.dumps(golden, indent=2, sort_keys=False) + "\n")
+        for r in unstubbed:
+            problems.append(f"(record) unstubbed request: {r['method']} {r['url']}")
+        if problems:
+            problems.append(f"stderr: {proc.stderr.strip()[-600:]}")
+        return problems, actual
+
+    if not golden_path.exists():
+        return [f"no golden {golden_path.relative_to(HERE)}; run with --record against the reference"], actual
+    golden = ctx.render_obj(json.loads(golden_path.read_text()))
+    if golden["exit"] != proc.returncode:
+        problems.append(f"exit {proc.returncode} != expected {golden['exit']}")
+    if kind in ("json", "jsonl") and parsed is not None:
+        problems += diff(golden["stdout"], mask(parsed, golden["stdout"], now), "stdout", args.strict)
+    for rel, g in golden["files"].items():
+        a = capture_path(home, rel)
+        problems += diff(g, mask(a, g, now), f"file {rel}", args.strict)
+    if step.get("requests", "exact") == "exact":
+        problems += diff_requests(golden["requests"], requests, args.strict)
+    if problems and args.verbose:
+        problems.append(f"stderr: {proc.stderr.strip()[-600:]}")
+    return problems, actual
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("cli", help="path to a cswap-compatible executable")
+    ap.add_argument("--only")
+    ap.add_argument("--record", action="store_true")
+    ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--keep", action="store_true")
+    ap.add_argument("--verbose", action="store_true")
+    ap.add_argument("--json", action="store_true")
+    args = ap.parse_args()
+
+    cli_path = shutil.which(args.cli) or args.cli
+    if not os.access(cli_path, os.X_OK):
+        print(f"replay: {args.cli} is not executable", file=sys.stderr)
+        return 2
+    cli = [os.path.abspath(cli_path)]
+
+    names = sorted(p.name for p in FIXTURES.iterdir() if (p / "fixture.json").exists())
+    if args.only:
+        wanted = args.only.split(",")
+        names = [n for n in names if any(w in n for w in wanted)]
+    failed = 0
+    for name in names:
+        fx_dir = FIXTURES / name
+        fx = json.loads((fx_dir / "fixture.json").read_text())
+        scratch = Path(tempfile.mkdtemp(prefix=f"cswap-replay-{name}-"))
+        home = scratch / "home"
+        problems: list[str] = []
+        t0 = time.monotonic()
+        # One clock and one template context per fixture: step 2 must see the
+        # same seeded instants as step 1.
+        ctx = Ctx(int(time.time()), home, fx.get("tokens", {}))
+        for tname, tok in ctx.tokens.items():
+            if "FAKE" not in tok:
+                raise SystemExit(f"{name}: token {tname} is not a FAKE token; refusing")
+        for idx, step in enumerate(fx["steps"]):
+            step_problems, _ = run_step(cli, fx_dir, idx, step, ctx, args)
+            problems += [f"step {idx + 1}: {p}" for p in step_problems]
+        ok = not problems
+        failed += not ok
+        verdict = ("RECORDED" if ok else "RECORD-WARN") if args.record else ("PASS" if ok else "FAIL")
+        if args.json:
+            print(json.dumps({"fixture": name, "verdict": verdict, "problems": problems,
+                              "seconds": round(time.monotonic() - t0, 2)}))
+        else:
+            print(f"{verdict:5} {name}")
+            for p in problems if args.verbose else problems[:8]:
+                print(f"      {p}")
+            if not args.verbose and len(problems) > 8:
+                print(f"      ... {len(problems) - 8} more (use --verbose)")
+        if args.keep:
+            print(f"      kept {home}", file=sys.stderr)
+        else:
+            shutil.rmtree(scratch, ignore_errors=True)
+    total = len(names)
+    summary = f"{total - failed}/{total} fixtures {'recorded' if args.record else 'passed'}"
+    print(summary if not args.json else json.dumps({"summary": summary, "failed": failed}),
+          file=sys.stderr if args.json else sys.stdout)
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

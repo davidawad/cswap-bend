@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""Regenerate tests/json_test.bend: expected texts come from Python's json
+module, so the Bend emitters are checked against the reference itself.
+usage: python3 -I scripts/gen-json-test.py > tests/json_test.bend"""
+import json
+
+
+def lit(s):
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+
+
+sequence = {
+    "activeAccountNumber": 1,
+    "lastUpdated": "2026-10-23T12:00:00Z",
+    "sequence": [1, 2, 3],
+    "accounts": {
+        "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "2026-10-13T12:00:00Z",
+        },
+        "2": {"email": "st2@example.test", "uuid": "", "organizationUuid": "",
+              "organizationName": "Caf\u00e9 \u20ac\U0001f600", "added": "2026-10-13T12:00:00Z"},
+    },
+}
+usage = {
+    "schemaVersion": 2,
+    "accounts": {
+        "1": {
+            "email": "owner@example.test",
+            "lastGood": {
+                "five_hour": {"pct": 90.0, "resets_at": "2026-10-23T14:00:00+00:00",
+                              "countdown": "seed", "clock": "seed"},
+                "seven_day": {"pct": 40.5, "resets_at": "2026-10-26T12:00:00+00:00",
+                              "countdown": "seed", "clock": "seed"},
+            },
+            "fetchedAt": 1793350770.25,
+            "claimId": None,
+            "claimUntil": 0.0,
+            "consecutiveFailures": 0,
+            "lastError": None,
+            "backoffUntil": None,
+            "pollIntervalS": 180.0,
+            "flags": [],
+            "extra": {},
+            "ok": True,
+            "bad": False,
+        }
+    },
+}
+tricky = {"s": "q\" b\\ n\n r\r t\t b\b f\f c\x01 del\x7f e\u00e9 \u20ac \U0001f600",
+          "n": [0, -1, 2.5, 1e5, -0.0, 1.5e-7, 12345678901234567890]}
+
+tests = []
+
+
+def t(name, lhs, rhs, ty="String"):
+    tests.append(f"def {name}() -> {{{lhs} == {rhs} : {ty}}}:\n  {{==}}\n")
+
+
+R = "Result<&2, &2, String, J.Json>"
+for name, obj in (("sequence", sequence), ("usage", usage), ("tricky", tricky)):
+    for style, kw, fn in (("pretty", dict(indent=2), "emit_pretty"),
+                          ("pretty_utf8", dict(indent=2, ensure_ascii=False), "emit_pretty_utf8"),
+                          ("py", {}, "emit_py")):
+        text = json.dumps(obj, **kw)
+        # parse the reference text and emit it again: byte for byte
+        t(f"rt_{name}_{style}", f"J.{fn}(J.unwrap(J.parse({lit(text)})))", lit(text))
+    t(f"compact_{name}", f"J.emit(J.unwrap(J.parse({lit(json.dumps(obj, ensure_ascii=False))})))",
+      lit(json.dumps(obj, ensure_ascii=False, separators=(",", ":"))))
+    # parsing is indifferent to formatting
+    t(f"fmt_blind_{name}", f"J.emit_pretty(J.unwrap(J.parse({lit(json.dumps(obj, separators=(',', ':')))})))",
+      lit(json.dumps(obj, indent=2)))
+
+hand = r'''
+# ---- hand-written ----------------------------------------------------------
+
+def unicode_escape_in() -> {J.emit(J.unwrap(J.parse("\"\\u00e9\\u20ac\\ud83d\\ude00\"")) ) == "\"é€😀\"" : String}:
+  {==}
+
+def unicode_escape_out() -> {J.emit_pretty(J.JStr{"é€😀\u{1}"}) == "\"\\u00e9\\u20ac\\ud83d\\ude00\\u0001\"" : String}:
+  {==}
+
+def unicode_raw_out() -> {J.emit_pretty_utf8(J.JStr{"é€😀"}) == "\"é€😀\"" : String}:
+  {==}
+
+def empty_containers() -> {J.emit_pretty(J.unwrap(J.parse("{\"a\": [], \"b\": {}, \"c\": [[], {}]}"))) == "{\n  \"a\": [],\n  \"b\": {},\n  \"c\": [\n    [],\n    {}\n  ]\n}" : String}:
+  {==}
+
+def number_text_kept() -> {J.emit(J.unwrap(J.parse("[90.0, 1e5, -0, 1E+2, 0.5]"))) == "[90.0,1e5,-0,1E+2,0.5]" : String}:
+  {==}
+
+def special_numbers() -> {J.emit(J.unwrap(J.parse("[NaN, Infinity, -Infinity]"))) == "[NaN,Infinity,-Infinity]" : String}:
+  {==}
+
+def key_order_kept() -> {J.emit(J.unwrap(J.parse("{\"z\":1,\"a\":2,\"m\":3}"))) == "{\"z\":1,\"a\":2,\"m\":3}" : String}:
+  {==}
+
+def scalar_top() -> {J.emit(J.unwrap(J.parse("  true "))) == "true" : String}:
+  {==}
+
+def err_empty() -> {J.parse("") == Fail{"unexpected end of input"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_trailing_comma() -> {J.parse("[1,]") == Fail{"trailing comma in array"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_trailing_data() -> {J.parse("1 2") == Fail{"trailing data after the value"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_unterminated() -> {J.parse("\"abc") == Fail{"unterminated string"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_bad_literal() -> {J.parse("[tru]") == Fail{"bad literal: tru"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_leading_zero() -> {J.parse("01") == Fail{"bad literal: 01"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_unclosed_array() -> {J.parse("[1, 2") == Fail{"unclosed array"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_unclosed_object() -> {J.parse("{\"a\": 1") == Fail{"unclosed object"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_missing_colon() -> {J.parse("{\"a\" 1}") == Fail{"expected a string key and :"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+def err_mismatched() -> {J.parse("[1}") == Fail{"unclosed array"} : Result<&2, &2, String, J.Json>}:
+  {==}
+
+# ---- accessors -------------------------------------------------------------
+
+def doc() -> J.Json:
+  J.unwrap(J.parse("{\"name\": \"x\", \"n\": 7, \"on\": true, \"f\": 7.5, \"nested\": {\"k\": [1, 2]}}"))
+
+def get_string() -> {Maybe.bind(&2, J.Json, String, J.get("name", doc()), J.as_string) == Some{"x"} : Maybe<&2, String>}:
+  {==}
+
+def get_u32() -> {Maybe.bind(&2, J.Json, U32, J.get("n", doc()), J.as_u32) == Some{7} : Maybe<&2, U32>}:
+  {==}
+
+def get_float_not_u32() -> {Maybe.bind(&2, J.Json, U32, J.get("f", doc()), J.as_u32) == None{} : Maybe<&2, U32>}:
+  {==}
+
+def get_bool() -> {Maybe.bind(&2, J.Json, Bool, J.get("on", doc()), J.as_bool) == Some{True{}} : Maybe<&2, Bool>}:
+  {==}
+
+def get_missing() -> {J.get("nope", doc()) == None{} : Maybe<&2, J.Json>}:
+  {==}
+
+def get_non_object() -> {J.get("a", J.JNull{}) == None{} : Maybe<&2, J.Json>}:
+  {==}
+
+def wrong_type() -> {Maybe.bind(&2, J.Json, String, J.get("n", doc()), J.as_string) == None{} : Maybe<&2, String>}:
+  {==}
+
+def keys_in_order() -> {J.keys(doc()) == ["name", "n", "on", "f", "nested"] : List<&2, String>}:
+  {==}
+
+def set_replaces_in_place() -> {J.emit(J.set("n", J.JNum{"8"}, J.unwrap(J.parse("{\"a\":1,\"n\":2,\"z\":3}")))) == "{\"a\":1,\"n\":8,\"z\":3}" : String}:
+  {==}
+
+def set_appends() -> {J.emit(J.set("q", J.JNull{}, J.unwrap(J.parse("{\"a\":1}")))) == "{\"a\":1,\"q\":null}" : String}:
+  {==}
+
+def del_key() -> {J.emit(J.del("n", J.unwrap(J.parse("{\"a\":1,\"n\":2,\"z\":3}")))) == "{\"a\":1,\"z\":3}" : String}:
+  {==}
+
+def pairs_round_trip() -> {J.emit(J.of_pairs(J.to_pairs(J.unwrap(J.parse("{\"b\":[1],\"a\":null}"))))) == "{\"b\":[1],\"a\":null}" : String}:
+  {==}
+
+def arr_builder() -> {J.emit(J.arr([J.JNum{"1"}, J.JStr{"a"}])) == "[1,\"a\"]" : String}:
+  {==}
+
+def to_list_elems() -> {J.to_list(J.unwrap(J.parse("[1,2]"))) == [J.JNum{"1"}, J.JNum{"2"}] : List<&2, J.Json>}:
+  {==}
+'''
+
+print("import Base")
+print("import ../src/json.bend as J")
+print()
+print("# Generated by scripts/gen-json-test.py from Python's json module.")
+print("# Hand-written equations follow the generated ones.")
+print()
+print("\n".join(tests))
+print(hand)

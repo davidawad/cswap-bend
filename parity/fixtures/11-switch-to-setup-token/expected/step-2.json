@@ -1,0 +1,38 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "active": {
+      "number": 3,
+      "email": "st3@example.test",
+      "organizationName": "",
+      "organizationUuid": "",
+      "isOrganization": false,
+      "managed": true,
+      "usageStatus": "ok",
+      "usage": {
+        "fiveHour": {
+          "pct": 5.0,
+          "resetsAt": "{{iso:+7200}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>"
+        },
+        "sevenDay": {
+          "pct": 10.0,
+          "resetsAt": "{{iso:+259200}}",
+          "countdown": "<volatile>",
+          "clock": "<volatile>",
+          "expectedPct": 57.1,
+          "aheadOfPace": false,
+          "projectedExhaustionAt": "<rel:+3110100>",
+          "willLastToReset": true
+        }
+      },
+      "usageFetchedAt": "{{isoz:-30}}",
+      "usageAgeSeconds": "<volatile>"
+    },
+    "totalManagedAccounts": 6
+  },
+  "files": {},
+  "requests": []
+}

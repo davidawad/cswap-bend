@@ -1,0 +1,144 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "switched": true,
+    "from": {
+      "number": 4,
+      "email": "st4@example.test"
+    },
+    "to": {
+      "number": 1,
+      "email": "owner@example.test"
+    },
+    "strategy": "direct",
+    "reason": "switched",
+    "message": "Switched to Account-1 (owner@example.test)",
+    "warnings": []
+  },
+  "files": {
+    ".claude/.credentials.json": {
+      "mode": "0o600",
+      "json": {
+        "claudeAiOauth": {
+          "accessToken": "{{tok:full_at}}",
+          "refreshToken": "{{tok:full_rt}}",
+          "expiresAt": "{{ms:+28800}}",
+          "scopes": [
+            "user:inference",
+            "user:profile",
+            "user:sessions:claude_code"
+          ],
+          "subscriptionType": "max"
+        }
+      }
+    },
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "accountUuid": "00000000-0000-4000-8000-0000000000a1",
+          "emailAddress": "owner@example.test",
+          "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+          "organizationName": "owner@example.test's Organization",
+          "displayName": "Owner",
+          "organizationRole": "admin"
+        }
+      }
+    },
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 1,
+        "lastUpdated": "<rel:+0>",
+        "sequence": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "{{isoz:-864000}}"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "3": {
+            "email": "st3@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "4": {
+            "email": "st4@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "5": {
+            "email": "st5@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "6": {
+            "email": "st6@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          }
+        }
+      }
+    },
+    ".claude-swap-backup/credentials/": {
+      "listing": [
+        ".creds-1-owner@example.test.enc",
+        ".creds-2-st2@example.test.enc",
+        ".creds-3-st3@example.test.enc",
+        ".creds-4-st4@example.test.enc",
+        ".creds-4-st4@example.test.enc.prev",
+        ".creds-5-st5@example.test.enc",
+        ".creds-6-st6@example.test.enc"
+      ]
+    },
+    ".claude-swap-backup/configs/": {
+      "listing": [
+        ".claude-config-1-owner@example.test.json",
+        ".claude-config-2-st2@example.test.json",
+        ".claude-config-3-st3@example.test.json",
+        ".claude-config-4-st4@example.test.json",
+        ".claude-config-5-st5@example.test.json",
+        ".claude-config-6-st6@example.test.json"
+      ]
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/profile",
+      "auth": "st4",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body": null
+    }
+  ]
+}

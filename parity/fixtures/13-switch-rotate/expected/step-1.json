@@ -1,0 +1,98 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "switched": true,
+    "from": {
+      "number": 1,
+      "email": "owner@example.test"
+    },
+    "to": {
+      "number": 3,
+      "email": "st3@example.test"
+    },
+    "strategy": "rotation",
+    "reason": "switched",
+    "message": "Switched to Account-3 (st3@example.test)",
+    "warnings": [
+      "Skipped Account-2 (disabled)"
+    ]
+  },
+  "files": {
+    ".claude.json": {
+      "mode": "0o600",
+      "json": {
+        "numStartups": 42,
+        "theme": "dark",
+        "hasCompletedOnboarding": true,
+        "oauthAccount": {
+          "emailAddress": "st3@example.test",
+          "accountUuid": "",
+          "organizationUuid": null,
+          "organizationName": null
+        }
+      }
+    },
+    ".claude-swap-backup/sequence.json": {
+      "mode": "0o600",
+      "json": {
+        "activeAccountNumber": 3,
+        "lastUpdated": "<rel:+0>",
+        "sequence": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "uuid": "00000000-0000-4000-8000-0000000000a1",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "organizationName": "owner@example.test's Organization",
+            "added": "{{isoz:-864000}}"
+          },
+          "2": {
+            "email": "st2@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}",
+            "disabled": true
+          },
+          "3": {
+            "email": "st3@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "4": {
+            "email": "st4@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "5": {
+            "email": "st5@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          },
+          "6": {
+            "email": "st6@example.test",
+            "uuid": "",
+            "organizationUuid": "",
+            "organizationName": "",
+            "added": "{{isoz:-864000}}"
+          }
+        }
+      }
+    }
+  },
+  "requests": []
+}

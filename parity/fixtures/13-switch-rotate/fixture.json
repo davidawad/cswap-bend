@@ -1,0 +1,45 @@
+{
+  "description": "bare switch --json rotates to the next slot in sequence order, skipping a disabled slot.",
+  "contract": [
+    "switch rotation"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "switch",
+        "--json"
+      ],
+      "capture": [
+        ".claude.json",
+        ".claude-swap-backup/sequence.json"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/profile",
+          "auth": "full_at",
+          "body": {
+            "account": {
+              "uuid": "00000000-0000-4000-8000-0000000000a1",
+              "email": "owner@example.test"
+            },
+            "organization": {
+              "uuid": "00000000-0000-4000-8000-0000000000b1"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 2,
+  "accounts": {
+    "1": {
+      "email": "owner@example.test",
+      "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+      "lastGood": {
+        "five_hour": {
+          "pct": 82.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 40.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    },
+    "2": {
+      "email": "st2@example.test",
+      "organizationUuid": "",
+      "lastGood": {
+        "five_hour": {
+          "pct": 10.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 30.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    },
+    "3": {
+      "email": "st3@example.test",
+      "organizationUuid": "",
+      "lastGood": {
+        "five_hour": {
+          "pct": 5.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 10.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    },
+    "4": {
+      "email": "st4@example.test",
+      "organizationUuid": "",
+      "lastGood": {
+        "five_hour": {
+          "pct": 50.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 60.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    },
+    "5": {
+      "email": "st5@example.test",
+      "organizationUuid": "",
+      "lastGood": {
+        "five_hour": {
+          "pct": 70.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 20.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    },
+    "6": {
+      "email": "st6@example.test",
+      "organizationUuid": "",
+      "lastGood": {
+        "five_hour": {
+          "pct": 1.0,
+          "resets_at": "{{iso:+7200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        },
+        "seven_day": {
+          "pct": 95.0,
+          "resets_at": "{{iso:+259200}}",
+          "countdown": "seed",
+          "clock": "seed"
+        }
+      },
+      "fetchedAt": "{{epoch:-30}}",
+      "lastAttemptAt": "{{epoch:-30}}",
+      "claimId": null,
+      "claimUntil": 0.0,
+      "consecutiveFailures": 0,
+      "lastError": null,
+      "backoffUntil": null,
+      "nextPollAt": "{{epoch:+150}}",
+      "pollIntervalS": 180.0,
+      "authDeadStrikes": 0
+    }
+  }
+}

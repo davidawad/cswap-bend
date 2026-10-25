@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "switched": false,
+    "from": {
+      "number": 3,
+      "email": "st3@example.test"
+    },
+    "to": {
+      "number": 3,
+      "email": "st3@example.test"
+    },
+    "strategy": "best",
+    "reason": "already-best",
+    "message": "Already on the account with the most remaining quota (Account-3).",
+    "warnings": []
+  },
+  "files": {},
+  "requests": []
+}

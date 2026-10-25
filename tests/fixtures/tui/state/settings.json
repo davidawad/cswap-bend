@@ -1,0 +1,6 @@
+{
+  "autoswitch": {
+    "threshold": 90,
+    "intervalSeconds": 60
+  }
+}

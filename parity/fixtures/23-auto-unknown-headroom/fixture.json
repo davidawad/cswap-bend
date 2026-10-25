@@ -1,0 +1,200 @@
+{
+  "description": "Patch 0002: the active account's usage read fails (HTTP 500, cold cache) -> no-switch active-usage-unknown, never a failover; exit 2.",
+  "contract": [
+    "auto",
+    "unknown headroom"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "auto",
+        "--once",
+        "--json",
+        "--threshold",
+        "85",
+        "--strategy",
+        "best"
+      ],
+      "stdout": "jsonl",
+      "capture": [
+        ".claude-swap-backup/autoswitch_state.json",
+        ".claude.json",
+        ".claude/.credentials.json",
+        ".claude-swap-backup/sequence.json",
+        ".claude-swap-backup/cache/usage.json"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/usage",
+          "auth": "full_at",
+          "status": 500,
+          "headers": {},
+          "body": {
+            "type": "error",
+            "error": {
+              "type": "error",
+              "message": "FAKE"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st2",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st3",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st4",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st5",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st6",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

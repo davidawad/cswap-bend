@@ -1,0 +1,33 @@
+{
+  "description": "auto --once while the live login is not managed -> no-switch unmanaged-active-account (auto-loop.sh keys its self-heal on this), exit 2.",
+  "contract": [
+    "auto",
+    "auto-loop.sh"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "auto",
+        "--once",
+        "--json",
+        "--threshold",
+        "85",
+        "--strategy",
+        "best"
+      ],
+      "stdout": "jsonl",
+      "http": []
+    }
+  ]
+}

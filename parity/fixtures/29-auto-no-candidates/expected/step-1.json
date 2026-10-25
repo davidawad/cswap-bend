@@ -1,0 +1,33 @@
+{
+  "exit": 3,
+  "stdout": [
+    {
+      "schemaVersion": 1,
+      "event": "poll",
+      "ts": "<rel:+0>",
+      "active": {
+        "number": 1,
+        "email": "owner@example.test"
+      },
+      "headroomPct": {
+        "1": 0.0
+      },
+      "threshold": 85.0,
+      "windowsPct": {
+        "1": {
+          "5h": 100.0,
+          "7d": 40.0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "event": "no-switch",
+      "ts": "<rel:+0>",
+      "reason": "no-candidates",
+      "detail": ""
+    }
+  ],
+  "files": {},
+  "requests": []
+}

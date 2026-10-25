@@ -1,0 +1,14 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "activeAccountNumber": null,
+    "accounts": []
+  },
+  "files": {
+    ".claude-swap-backup/": {
+      "absent": true
+    }
+  },
+  "requests": []
+}

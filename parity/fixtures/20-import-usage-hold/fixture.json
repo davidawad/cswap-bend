@@ -1,0 +1,181 @@
+{
+  "description": "import-usage adopts another machine's list --json reading for matching identities (slot 2), skips non-ok and unknown rows, and --hold 600 stops this machine fetching slot 2; the following list fetches only the others.",
+  "contract": [
+    "import-usage",
+    "usage.json",
+    "hold"
+  ],
+  "tokens": {
+    "full_at": "sk-ant-oat01-FAKE-full-access-0000000000000000000000000000",
+    "full_rt": "sk-ant-ort01-FAKE-full-refresh-000000000000000000000000000",
+    "st2": "sk-ant-oat01-FAKE-setup-2-22222222222222222222222222222222222",
+    "st3": "sk-ant-oat01-FAKE-setup-3-33333333333333333333333333333333333",
+    "st4": "sk-ant-oat01-FAKE-setup-4-44444444444444444444444444444444444",
+    "st5": "sk-ant-oat01-FAKE-setup-5-55555555555555555555555555555555555",
+    "st6": "sk-ant-oat01-FAKE-setup-6-66666666666666666666666666666666666",
+    "new": "sk-ant-oat01-FAKE-setup-new-999999999999999999999999999999999",
+    "apikey": "sk-ant-api03-FAKE-apikey-77777777777777777777777777777777777"
+  },
+  "steps": [
+    {
+      "argv": [
+        "import-usage",
+        "usage-in.json",
+        "--hold",
+        "600"
+      ],
+      "stdout": "text",
+      "write": {
+        "usage-in.json": "{\n  \"schemaVersion\": 1,\n  \"activeAccountNumber\": 1,\n  \"accounts\": [\n    {\n      \"number\": 2,\n      \"email\": \"st2@example.test\",\n      \"organizationName\": \"\",\n      \"organizationUuid\": \"\",\n      \"isOrganization\": false,\n      \"active\": false,\n      \"usageStatus\": \"ok\",\n      \"usageAgeSeconds\": 20.0,\n      \"usage\": {\n        \"fiveHour\": {\n          \"pct\": 44.0,\n          \"resetsAt\": \"{{iso:+3000}}\",\n          \"countdown\": \"x\",\n          \"clock\": \"y\"\n        },\n        \"sevenDay\": {\n          \"pct\": 55.0,\n          \"resetsAt\": \"{{iso:+200000}}\"\n        }\n      }\n    },\n    {\n      \"number\": 3,\n      \"email\": \"st3@example.test\",\n      \"organizationName\": \"\",\n      \"organizationUuid\": \"\",\n      \"isOrganization\": false,\n      \"active\": false,\n      \"usageStatus\": \"unavailable\",\n      \"usage\": null\n    },\n    {\n      \"number\": 9,\n      \"email\": \"stranger@example.test\",\n      \"organizationName\": \"\",\n      \"organizationUuid\": \"\",\n      \"isOrganization\": false,\n      \"active\": false,\n      \"usageStatus\": \"ok\",\n      \"usageAgeSeconds\": 5,\n      \"usage\": {\n        \"fiveHour\": {\n          \"pct\": 1.0\n        }\n      }\n    }\n  ]\n}"
+      },
+      "stderr_contains": [
+        "Done: 1 adopted, 0 kept, 2 skipped"
+      ],
+      "capture": [
+        ".claude-swap-backup/cache/usage.json"
+      ]
+    },
+    {
+      "argv": [
+        "list",
+        "--json"
+      ],
+      "http": [
+        {
+          "method": "GET",
+          "url": "https://api.anthropic.com/api/oauth/usage",
+          "auth": "full_at",
+          "body": {
+            "five_hour": {
+              "utilization": 12.0,
+              "resets_at": "{{iso:+5400}}"
+            },
+            "seven_day": {
+              "utilization": 40.0,
+              "resets_at": "{{iso:+259200}}"
+            },
+            "extra_usage": {
+              "is_enabled": false
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st3",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st4",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st5",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.anthropic.com/v1/messages",
+          "auth": "st6",
+          "status": 200,
+          "headers": {
+            "anthropic-ratelimit-unified-5h-utilization": "0.1",
+            "anthropic-ratelimit-unified-5h-reset": "{{epoch:+3600}}",
+            "anthropic-ratelimit-unified-7d-utilization": "0.2",
+            "anthropic-ratelimit-unified-7d-reset": "{{epoch:+259200}}"
+          },
+          "body": {
+            "id": "msg_FAKE",
+            "type": "message",
+            "role": "assistant",
+            "model": "claude-haiku-5-5",
+            "content": [
+              {
+                "type": "text",
+                "text": "."
+              }
+            ],
+            "stop_reason": "max_tokens",
+            "usage": {
+              "input_tokens": 20,
+              "output_tokens": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

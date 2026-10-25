@@ -1,0 +1,11 @@
+{
+  "numStartups": 42,
+  "theme": "dark",
+  "hasCompletedOnboarding": true,
+  "oauthAccount": {
+    "emailAddress": "st3@example.test",
+    "accountUuid": "",
+    "organizationUuid": null,
+    "organizationName": null
+  }
+}

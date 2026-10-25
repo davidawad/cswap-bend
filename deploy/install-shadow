@@ -1,0 +1,117 @@
+#!/bin/sh
+# Install the Bend shadow daemon as a LaunchAgent next to the live Python
+# poller. The shadow run decides what it would do and logs it; it never
+# switches. Without --live this only prints what it would do and creates
+# nothing.
+#
+#   deploy/install-shadow             dry run: print the steps and the rendered plist
+#   deploy/install-shadow --live      build, copy the binary, render the plist, load it
+#   deploy/install-shadow --uninstall [--live]   unload and remove the LaunchAgent
+#
+# The binary lands in ~/.local/share/cswap-bend/<git sha>/cswap-bend. The
+# interval, threshold, models and strategy are read from the dotfiles poller's
+# plist ($HOME/.config/cswap-legacy/com.david.cswap-auto.plist), so the shadow
+# decides under the live settings. ~/.claude-swap-backup and the live launchd
+# job com.david.cswap-auto are never touched.
+#
+# Test seams: SHADOW_HOME (default $HOME), SHADOW_LIVE_PLIST (the poller's
+# plist), SHADOW_SHA (instead of git rev-parse), SHADOW_NO_LAUNCHCTL=1.
+set -eu
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(dirname "$here")
+live=0
+uninstall=0
+for a in "$@"; do
+  case "$a" in
+    --live) live=1 ;;
+    --uninstall) uninstall=1 ;;
+    -h | --help)
+      sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "install-shadow: unknown argument $a" >&2
+      exit 2
+      ;;
+  esac
+done
+
+home=${SHADOW_HOME:-$HOME}
+label=com.david.cswap-bend-shadow
+live_plist=${SHADOW_LIVE_PLIST:-$home/.config/cswap-legacy/com.david.cswap-auto.plist}
+state_dir=$home/.local/state/cswap-bend-shadow
+shadow_log=$state_dir/shadow.jsonl
+agent=$home/Library/LaunchAgents/$label.plist
+sha=${SHADOW_SHA:-$(git -C "$root" rev-parse --short HEAD)}
+dest_dir=$home/.local/share/cswap-bend/$sha
+dest_bin=$dest_dir/cswap-bend
+uid=$(id -u)
+
+say() { printf '%s\n' "$*"; }
+if [ "$live" = 1 ]; then mode=LIVE; else mode="DRY RUN (nothing is changed; pass --live)"; fi
+say "install-shadow: $mode"
+
+# The poller's settings, from its plist (defaults when a key is absent).
+setting() { # key default
+  python3 -I - "$live_plist" "$1" "$2" << 'PYEOF'
+import plistlib, sys
+path, key, default = sys.argv[1:4]
+try:
+    with open(path, "rb") as f:
+        env = plistlib.load(f).get("EnvironmentVariables", {})
+    print(env.get(key, default))
+except Exception:
+    print(default)
+PYEOF
+}
+interval=$(setting CSWAP_AUTO_INTERVAL 300)
+threshold=$(setting CSWAP_AUTO_THRESHOLD 85)
+models=$(setting CSWAP_AUTO_MODEL "Fable,Opus")
+strategy=$(setting CSWAP_AUTO_STRATEGY best)
+
+launchctl_() {
+  if [ "${SHADOW_NO_LAUNCHCTL:-0}" = 1 ]; then
+    say "  (launchctl $* skipped)"
+  else
+    launchctl "$@"
+  fi
+}
+
+if [ "$uninstall" = 1 ]; then
+  say "would: launchctl bootout gui/$uid/$label"
+  say "would: remove $agent"
+  say "kept: $dest_dir and $state_dir (the binary and the shadow log)"
+  if [ "$live" = 1 ]; then
+    launchctl_ bootout "gui/$uid/$label" 2> /dev/null || true
+    rm -f "$agent"
+    say "uninstalled $label"
+  fi
+  exit 0
+fi
+
+render() {
+  sed -e "s|@BIN@|$dest_bin|g" -e "s|@SHADOW_LOG@|$shadow_log|g" -e "s|@INTERVAL@|$interval|g" \
+    -e "s|@THRESHOLD@|$threshold|g" -e "s|@MODELS@|$models|g" -e "s|@STRATEGY@|$strategy|g" \
+    -e "s|@HOME@|$home|g" -e "s|@STATE_DIR@|$state_dir|g" "$here/com.david.cswap-bend-shadow.plist.in"
+}
+
+say "settings (from $live_plist): interval=$interval threshold=$threshold models=$models strategy=$strategy"
+say "would: build bin/cswap-bend (just build) in $root"
+say "would: copy it to $dest_bin"
+say "would: create $state_dir (shadow log: $shadow_log)"
+say "would: write $agent:"
+render | sed 's/^/    /'
+say "would: launchctl bootstrap gui/$uid $agent (after a bootout of any earlier copy)"
+say "the live poller com.david.cswap-auto and ~/.claude-swap-backup are not touched"
+
+if [ "$live" = 1 ]; then
+  (cd "$root" && just build)
+  mkdir -p "$dest_dir" "$state_dir" "$home/Library/LaunchAgents"
+  cp "$root/bin/cswap-bend" "$dest_bin"
+  chmod 755 "$dest_bin"
+  render > "$agent.tmp"
+  mv "$agent.tmp" "$agent"
+  launchctl_ bootout "gui/$uid/$label" 2> /dev/null || true
+  launchctl_ bootstrap "gui/$uid" "$agent"
+  say "installed $label ($sha); shadow log: $shadow_log"
+fi

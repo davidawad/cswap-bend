@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "autoswitch": {
+    "threshold": 80.0,
+    "strategy": "best",
+    "cooldownSeconds": 300.0
+  }
+}

@@ -1,0 +1,530 @@
+{
+  "exit": 0,
+  "stdout": {
+    "schemaVersion": 1,
+    "activeAccountNumber": 1,
+    "accounts": [
+      {
+        "number": 1,
+        "email": "owner@example.test",
+        "organizationName": "owner@example.test's Organization",
+        "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+        "isOrganization": true,
+        "active": true,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 12.0,
+            "resetsAt": "{{iso:+5400}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 40.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+518404>",
+            "willLastToReset": true
+          },
+          "scoped": [
+            {
+              "pct": 30.0,
+              "resetsAt": "{{iso:+259200}}",
+              "countdown": "<volatile>",
+              "clock": "<volatile>",
+              "expectedPct": 57.1,
+              "aheadOfPace": false,
+              "projectedExhaustionAt": "<rel:+806405>",
+              "willLastToReset": true,
+              "name": "Opus"
+            }
+          ]
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 2,
+        "email": "st2@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 10.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 30.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+806405>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 3,
+        "email": "st3@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 5.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 10.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+3110417>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 4,
+        "email": "st4@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 50.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 60.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+230402>",
+            "willLastToReset": false
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 5,
+        "email": "st5@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 70.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 20.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": false,
+            "projectedExhaustionAt": "<rel:+1382408>",
+            "willLastToReset": true
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      },
+      {
+        "number": 6,
+        "email": "st6@example.test",
+        "organizationName": "",
+        "organizationUuid": "",
+        "isOrganization": false,
+        "active": false,
+        "usageStatus": "ok",
+        "usage": {
+          "fiveHour": {
+            "pct": 1.0,
+            "resetsAt": "{{iso:+3600}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>"
+          },
+          "sevenDay": {
+            "pct": 95.0,
+            "resetsAt": "{{iso:+259200}}",
+            "countdown": "<volatile>",
+            "clock": "<volatile>",
+            "expectedPct": 57.1,
+            "aheadOfPace": true,
+            "projectedExhaustionAt": "<rel:+18191>",
+            "willLastToReset": false
+          }
+        },
+        "usageFetchedAt": "<rel:+1>",
+        "usageAgeSeconds": "<volatile>"
+      }
+    ]
+  },
+  "files": {
+    ".claude-swap-backup/cache/usage.json": {
+      "mode": "0o600",
+      "json": {
+        "schemaVersion": 2,
+        "accounts": {
+          "1": {
+            "email": "owner@example.test",
+            "organizationUuid": "00000000-0000-4000-8000-0000000000b1",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 12.0,
+                "resets_at": "{{iso:+5400}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 40.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "scoped": [
+                {
+                  "name": "Opus",
+                  "pct": 30.0,
+                  "resets_at": "{{iso:+259200}}",
+                  "countdown": "<volatile>",
+                  "clock": "<volatile>"
+                }
+              ]
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+182>",
+            "pollIntervalS": 180.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "2": {
+            "email": "st2@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 30.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+286>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "3": {
+            "email": "st3@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 5.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 10.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+331>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "4": {
+            "email": "st4@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 50.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 60.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+298>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "5": {
+            "email": "st5@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 70.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 20.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+292>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          },
+          "6": {
+            "email": "st6@example.test",
+            "organizationUuid": "",
+            "lastAttemptAt": "<rel:+2>",
+            "claimId": null,
+            "claimUntil": 0.0,
+            "lastGood": {
+              "five_hour": {
+                "pct": 1.0,
+                "resets_at": "{{iso:+3600}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              },
+              "seven_day": {
+                "pct": 95.0,
+                "resets_at": "{{iso:+259200}}",
+                "countdown": "<volatile>",
+                "clock": "<volatile>"
+              }
+            },
+            "fetchedAt": "<rel:+2>",
+            "nextPollAt": "<rel:+300>",
+            "pollIntervalS": 300.0,
+            "consecutiveFailures": 0,
+            "lastError": null,
+            "backoffUntil": null,
+            "rejectedFingerprint": null,
+            "authDeadStrikes": 0
+          }
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/usage",
+      "auth": "full_at",
+      "headers": {
+        "anthropic-beta": "oauth-2025-04-20"
+      },
+      "body": null
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st2",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st3",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st4",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st5",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.anthropic.com/v1/messages",
+      "auth": "st6",
+      "headers": {
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "claude-code-20250219,oauth-2025-04-20",
+        "content-type": "application/json"
+      },
+      "body": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1,
+        "system": [
+          {
+            "type": "text",
+            "text": "You are Claude Code, Anthropic's official CLI for Claude."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": "."
+          }
+        ]
+      }
+    }
+  ]
+}

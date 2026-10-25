@@ -1,0 +1,309 @@
+#!/usr/bin/env -S python3 -I
+"""shadow-compare: line up the Python poller's decisions with the Bend shadow
+daemon's, tick by tick, and report where they differ.
+
+usage: scripts/shadow-compare PYTHON_LOG BEND_LOG [--interval SECONDS] [--json]
+
+PYTHON_LOG is the live poller's log (auto.log): lines `<iso-ts> <json>` whose
+`event` is poll, switch or no-switch; other lines (loop-start, self-heal, ...)
+are ignored. A tick is a `poll` line plus the decision line (switch or
+no-switch) logged in the same pass.
+
+BEND_LOG is the shadow log, one JSON object per tick:
+  ts, active, event, reason, trigger, from, to, accounts, events
+`active`, `from` and `to` may be a slot number or {"number": N, "email": ...};
+`accounts` may be a list of {number|slot, headroomPct|headroom} or an object
+slot -> number or {headroomPct|headroom}. Missing fields are tolerated.
+
+Each Bend tick is paired with the nearest unused Python tick within
++-INTERVAL seconds (default 300). A pair agrees when both made the same
+decision (switch or not) and, for a switch, chose the same target. Everything
+else is a divergence and is printed with both sides' headroom. The exit status
+is always 0: this is a report, not a gate.
+"""
+import argparse
+import json
+import sys
+from datetime import datetime, timezone
+
+DECISION_WINDOW_S = 5.0
+
+
+def parse_ts(text):
+    try:
+        t = datetime.fromisoformat(str(text).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return t.timestamp()
+
+
+def slot_of(v):
+    """A slot number from a number, a numeric string or {"number": N, ...}."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float) and v == int(v):
+        return int(v)
+    if isinstance(v, str) and v.strip().isdigit():
+        return int(v.strip())
+    if isinstance(v, dict):
+        for k in ("number", "slot"):
+            if k in v:
+                return slot_of(v[k])
+    return None
+
+
+def pct_of(v):
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, dict):
+        for k in ("headroomPct", "headroom"):
+            if k in v:
+                return pct_of(v[k])
+    return None
+
+
+def headroom_map(accounts):
+    out = {}
+    if isinstance(accounts, dict):
+        for k, v in accounts.items():
+            s = slot_of(k)
+            if s is not None:
+                out[s] = pct_of(v)
+    elif isinstance(accounts, list):
+        for row in accounts:
+            s = slot_of(row)
+            if s is not None:
+                out[s] = pct_of(row)
+    return out
+
+
+def split_ts_line(line):
+    line = line.rstrip("\n")
+    head, _, rest = line.partition(" ")
+    return head, rest
+
+
+def read_python(path):
+    """Ticks of the Python poller: a poll line and the decision that follows."""
+    ticks = []
+    cur = None
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            head, rest = split_ts_line(line)
+            if not rest.startswith("{"):
+                continue
+            try:
+                ev = json.loads(rest)
+            except ValueError:
+                continue
+            if not isinstance(ev, dict):
+                continue
+            kind = ev.get("event")
+            t = parse_ts(ev.get("ts") or head)
+            if t is None:
+                continue
+            if kind == "poll":
+                cur = {
+                    "t": t,
+                    "ts": ev.get("ts") or head,
+                    "active": slot_of(ev.get("active")),
+                    "headroom": headroom_map(ev.get("headroomPct")),
+                    "event": "none",
+                    "reason": None,
+                    "trigger": None,
+                    "from": None,
+                    "to": None,
+                }
+                ticks.append(cur)
+            elif kind in ("switch", "no-switch"):
+                if cur is None or t - cur["t"] > DECISION_WINDOW_S or cur["event"] != "none":
+                    cur = {
+                        "t": t,
+                        "ts": ev.get("ts") or head,
+                        "active": None,
+                        "headroom": {},
+                        "event": "none",
+                        "reason": None,
+                        "trigger": None,
+                        "from": None,
+                        "to": None,
+                    }
+                    ticks.append(cur)
+                cur["event"] = kind
+                cur["reason"] = ev.get("reason")
+                cur["trigger"] = ev.get("trigger")
+                cur["from"] = slot_of(ev.get("from"))
+                cur["to"] = slot_of(ev.get("to"))
+    return ticks
+
+
+def read_bend(path):
+    ticks = []
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                ev = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(ev, dict):
+                continue
+            t = parse_ts(ev.get("ts"))
+            if t is None:
+                continue
+            kind = ev.get("event")
+            ticks.append({
+                "t": t,
+                "ts": ev.get("ts"),
+                "active": slot_of(ev.get("active")),
+                "headroom": headroom_map(ev.get("accounts")),
+                "event": kind if kind in ("switch", "no-switch") else "none",
+                "reason": ev.get("reason"),
+                "trigger": ev.get("trigger"),
+                "from": slot_of(ev.get("from")),
+                "to": slot_of(ev.get("to")),
+            })
+    return ticks
+
+
+def pair(py, bend, interval):
+    """Greedy nearest pairing: each Bend tick takes the closest unused Python
+    tick within the interval. Returns (pairs, unpaired_bend, unpaired_python)."""
+    used = set()
+    pairs, lone_bend = [], []
+    for b in bend:
+        best, best_d = None, None
+        for i, p in enumerate(py):
+            if i in used:
+                continue
+            d = abs(p["t"] - b["t"])
+            if d <= interval and (best_d is None or d < best_d):
+                best, best_d = i, d
+        if best is None:
+            lone_bend.append(b)
+        else:
+            used.add(best)
+            pairs.append((py[best], b, best_d))
+    lone_py = [p for i, p in enumerate(py) if i not in used]
+    return pairs, lone_bend, lone_py
+
+
+def decision(t):
+    return "switch" if t["event"] == "switch" else "stay"
+
+
+def divergence(p, b):
+    """None when the two ticks agree, else why not."""
+    dp, db = decision(p), decision(b)
+    if dp != db:
+        return "event"
+    if dp == "switch" and p["to"] != b["to"]:
+        return "target"
+    return None
+
+
+def fmt_headroom(h):
+    if not h:
+        return "-"
+    return " ".join("%s=%s" % (k, "?" if v is None else ("%g" % v)) for k, v in sorted(h.items()))
+
+
+def side(t):
+    return {
+        "ts": t["ts"],
+        "active": t["active"],
+        "event": t["event"],
+        "reason": t["reason"],
+        "trigger": t["trigger"],
+        "from": t["from"],
+        "to": t["to"],
+        "headroom": {str(k): v for k, v in sorted(t["headroom"].items())},
+    }
+
+
+def compare(py, bend, interval):
+    pairs, lone_bend, lone_py = pair(py, bend, interval)
+    rows, divs = [], []
+    for p, b, d in pairs:
+        why = divergence(p, b)
+        row = {"dt": round(d, 1), "python": side(p), "bend": side(b), "agree": why is None, "divergence": why}
+        rows.append(row)
+        if why:
+            divs.append(row)
+    n = len(rows)
+    agree = sum(1 for r in rows if r["agree"])
+    return {
+        "pairs": rows,
+        "paired": n,
+        "agreed": agree,
+        "agreement": (agree / n) if n else None,
+        "divergences": divs,
+        "unpaired_bend": [side(t) for t in lone_bend],
+        "unpaired_python": [side(t) for t in lone_py],
+        "interval": interval,
+    }
+
+
+def report(res):
+    out = []
+    out.append("shadow-compare: %d paired tick(s), %d agree" % (res["paired"], res["agreed"]))
+    if res["agreement"] is not None:
+        out.append("agreement: %.1f%%" % (100.0 * res["agreement"]))
+    else:
+        out.append("agreement: n/a (nothing paired)")
+    out.append("unpaired: %d Bend tick(s) with no Python tick within %ss, %d Python tick(s) with no Bend tick"
+               % (len(res["unpaired_bend"]), res["interval"], len(res["unpaired_python"])))
+    for r in res["pairs"]:
+        mark = "ok  " if r["agree"] else "DIFF"
+        p, b = r["python"], r["bend"]
+        out.append("%s py %s %s%s | bend %s %s%s | dt %ss"
+                   % (mark, p["ts"], p["event"], "->%s" % p["to"] if p["event"] == "switch" else "",
+                      b["ts"], b["event"], "->%s" % b["to"] if b["event"] == "switch" else "", r["dt"]))
+    if res["divergences"]:
+        out.append("")
+        out.append("divergences (%d):" % len(res["divergences"]))
+        for r in res["divergences"]:
+            p, b = r["python"], r["bend"]
+            out.append("  %s at py %s / bend %s" % (r["divergence"], p["ts"], b["ts"]))
+            out.append("    python: %s reason=%s trigger=%s from=%s to=%s active=%s headroom: %s"
+                       % (p["event"], p["reason"], p["trigger"], p["from"], p["to"], p["active"], fmt_headroom({int(k): v for k, v in p["headroom"].items()})))
+            out.append("    bend:   %s reason=%s trigger=%s from=%s to=%s active=%s headroom: %s"
+                       % (b["event"], b["reason"], b["trigger"], b["from"], b["to"], b["active"], fmt_headroom({int(k): v for k, v in b["headroom"].items()})))
+    return "\n".join(out) + "\n"
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(description="Compare the Python poller's decisions with the Bend shadow log.")
+    ap.add_argument("python_log")
+    ap.add_argument("bend_log")
+    ap.add_argument("--interval", type=float, default=300.0, help="pairing window in seconds (default 300)")
+    ap.add_argument("--json", action="store_true", help="print the summary as JSON")
+    args = ap.parse_args(argv)
+    try:
+        py = read_python(args.python_log)
+        bend = read_bend(args.bend_log)
+    except OSError as e:
+        msg = "shadow-compare: cannot read %s" % e.filename
+        if args.json:
+            print(json.dumps({"error": msg}))
+        else:
+            print(msg, file=sys.stderr)
+        return 0
+    res = compare(py, bend, args.interval)
+    if args.json:
+        print(json.dumps(res, indent=2))
+    else:
+        sys.stdout.write(report(res))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
