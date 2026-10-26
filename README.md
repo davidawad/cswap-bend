@@ -37,6 +37,12 @@ just ci      # version pin, check + unit tests, proofs, lint, build + integratio
 just build   # bin/cswap-bend
 ```
 
+## BendHub
+
+Published on BendHub as `cswap-bend-cli` (version `0.1.0.0`; `bend src/main.bend --publish cswap-bend-cli@0.1.0.0`).
+The name differs from the repository's because BendHub auctions names shorter
+than 12 characters.
+
 ## Behaviour profiles
 
 A profile is a named bundle of a **strategy**, a threshold, a model list, a

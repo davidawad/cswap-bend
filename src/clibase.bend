@@ -9,7 +9,7 @@ import ./cmd.bend as Cmd
 # Every command answers a Cmd.Out; main prints it and exits with its code.
 
 def version() -> String:
-  "cswap-bend 0.0.1"
+  "cswap-bend 0.1.0"
 
 def ActM(-A: Type) -> Type:
   Act.of(A)
