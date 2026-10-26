@@ -19,10 +19,9 @@ running Python poller with it.
 |---|---|
 | `src/main.bend` | program entry: `rpc` / `serve`, else `src/exec.bend` |
 | `src/exec.bend` | the command line: global options, dispatch, output formats |
-| `src/fmt/` | output formats: CSV, YAML, TOON (over `vendor/bend-toon`), the CSV shapes |
+| `src/fmt/` | output formats: CSV, YAML, TOON (over the `bend-toon-codec` BendHub package), the CSV shapes |
 | `src/rpc*.bend`, `src/server.bend`, `src/effs/usock.c` | `cswap rpc` and `cswap serve` (docs/API.md) |
 | `src/http.bend` | HTTPS through curl, config on stdin, header parsing |
-| `vendor/bend-toon/` | the TOON codec, vendored (see its `VENDOR.md`) |
 | `tests/*_test.bend` | ground-equation unit tests (`just check`) |
 | `tests/*_it.sh` | integration tests against the built binary (`just it`) |
 | `LAWS.bend` / `PROOF.bend` | claims (humans write) and their proofs (`just laws`) |

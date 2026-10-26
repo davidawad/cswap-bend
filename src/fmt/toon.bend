@@ -1,10 +1,9 @@
 import Base
 import ../json.bend as Json
-import ../../vendor/bend-toon/main.bend as Toon
+import bend-toon-codec@0.1.0.0/main.bend as Toon
 
-# TOON (spec v3.3) for the JSON data model, through the vendored bend-toon
-# package (vendor/bend-toon, see VENDOR.md). Once bend-toon is on BendHub, the
-# import above becomes `import bend-toon@0.1.0.0/main.bend as Toon`.
+# TOON (spec v3.3) for the JSON data model, through the bend-toon package
+# published on BendHub as bend-toon-codec (https://github.com/davidawad/bend-toon).
 # bend-toon declares its own Json type with this module's constructors, so the
 # two are converted constructor for constructor.
 

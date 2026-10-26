@@ -35,7 +35,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## bend-toon (vendor/bend-toon)
+## bend-toon-codec
 
-TOON encoder and decoder for Bend 2 by the same author, vendored unchanged and
-licensed GPL-3.0-or-later (`vendor/bend-toon/LICENSE`).
+TOON encoder and decoder for Bend 2 by the same author
+(https://github.com/davidawad/bend-toon), imported from BendHub as
+`bend-toon-codec@0.1.0.0` and licensed GPL-3.0-or-later.
