@@ -257,8 +257,8 @@ def auto1(+strategy: String, +ctx: SBase.Ctx, +label: String, +models: List<&2, 
         auto_branch(strategy, ctx, seq, l, label, models, opts)
 
 # `cswap switch [--strategy best|next-available] [--model NAMES]`: strategy
-#  0  rotates through `sequence`;  1  also skips accounts with no
-# headroom;  2  moves to the account with strictly more headroom. Usage is
+# "" rotates through `sequence`; "next-available" also skips accounts with no
+# headroom; "best" moves to the account with strictly more headroom. Usage is
 # read from cache/usage.json as it stands (no fetch). A logged-out machine
 # activates the active (else first) slot. The result is the object of
 # contract 2.3; no-op outcomes are results, not errors. A live unmanaged login
