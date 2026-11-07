@@ -4,6 +4,7 @@ import ./pollrow.bend as Pollrow
 import ./usage/cred.bend as UCred
 import ./store/io.bend as SIo
 import ./store/seq.bend as SSeq
+import ./tokensrc.bend as Tokensrc
 import ./store/base.bend as SBase
 import ./json.bend as Json
 import ./clock.bend as Clock
@@ -63,8 +64,12 @@ def read_text2(r: Fs.Res(String)) -> String:
 def read_text(+path: String) -> IO(String):
   IO.bind(Fs.Res(String), String, Fs.read_file(path), r => IO.pure(String, read_text2(r)))
 
+def live_ident2(+t: String, +pick: Json.Json) -> Store.Ident:
+  Store.ident_of(Tokensrc.overlay(Json.unwrap(Json.parse(t)), pick))
+
 def live_ident(+ctx: SBase.Ctx) -> IO(Store.Ident):
-  IO.bind(String, Store.Ident, read_text(SBase.global_config_path(ctx)), t => IO.pure(Store.Ident, Store.ident_of(Json.unwrap(Json.parse(t)))))
+  IO.bind(String, Store.Ident, read_text(SBase.global_config_path(ctx)),
+    t => IO.bind(Json.Json, Store.Ident, Tokensrc.read_pick(), pick => IO.pure(Store.Ident, live_ident2(t, pick))))
 
 def active.pick(ok: Bool, +seq: Json.Json, +id: Store.Ident) -> Maybe<&2, String>:
   match ok:

@@ -6,6 +6,7 @@ import ./store.bend as Store
 import ./swbase.bend as B
 import ./swcreds.bend as C
 import ./swlive.bend as L
+import ./tokensrc.bend as Tokensrc
 import ./fs/write.bend as FsW
 import ./store/base.bend as SBase
 import ./store/io.bend as SIo
@@ -159,7 +160,9 @@ def perform3b(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pr
 def perform3(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pre: L.Pre, +ts: String, +seq_text: String, +seq: Json.Json, +temail: String) -> Act.of(Json.Json):
   do ActM<Json.Json>:
     l : L.Live <- L.read_live(ctx)
-    +tcreds : String <- SIo.read_cred(root, target, temail)
+    +stored : String <- SIo.read_cred(root, target, temail)
+    +fresh : String <- Tokensrc.creds_for(temail)
+    +tcreds : String = SBase.sel.s(SBase.nonempty(fresh), fresh, stored)
     need(SBase.nonempty(tcreds), "Account-" ++ target ++ " has no stored credentials. " ++ reinstruct(target))
     perform3b(ctx, root, target, force, pre, ts, seq_text, seq, temail, l, tcreds)
 
@@ -201,6 +204,7 @@ def do_switch2(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts, +p
   do ActM<Json.Json>:
     ts : String <- SIo.now_iso()
     +op : Json.Json <- L.with_locks(Json.Json, ctx, perform_locked(ctx, target, force, pre, ts))
+    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SSeq.field_str(op, "targetOrg"))
     verify_live(ctx, L.opts_delay(opts), target, SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SSeq.field_str(op, "targetOrg"))
     return op
 

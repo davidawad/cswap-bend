@@ -13,6 +13,7 @@ import ./store/base.bend as SBase
 import ./store/io.bend as SIo
 import ./store/plan.bend as SPlan
 import ./store/seq.bend as SSeq
+import ./tokensrc.bend as Tokensrc
 
 # Switch, part 4: the live login on disk, the locks, the ownership lookup.
 
@@ -100,11 +101,21 @@ def parse_text(+m: Maybe<&2, String>) -> Maybe<&2, Json.Json>:
     case Some{t}:
       parse_text2(Json.parse(t))
 
+# The user-config active pick (tokensrc) replaces the identity ~/.claude.json
+# names, which a running session rewrites. Without a pick nothing changes.
+def overlay_cfg(+m: Maybe<&2, Json.Json>, +pick: Json.Json) -> Maybe<&2, Json.Json>:
+  match m:
+    case None{}:
+      None{}
+    case Some{c}:
+      Some{Tokensrc.overlay(c, pick)}
+
 def read_live(+ctx: SBase.Ctx) -> Act.of(Live):
   do ActM<Live>:
     +cfg_text : Maybe<&2, String> <- read_text_opt(SBase.global_config_path(ctx))
     creds_text : Maybe<&2, String> <- read_text_opt(SBase.live_creds_path(ctx))
-    return Live{cfg_text, parse_text(cfg_text), creds_text}
+    pick : Json.Json <- Act.lift(Json.Json, Tokensrc.read_pick())
+    return Live{cfg_text, overlay_cfg(parse_text(cfg_text), pick), creds_text}
 
 def lv_cfg(+l: Live) -> Json.Json:
   match l:
