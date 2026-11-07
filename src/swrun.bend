@@ -133,7 +133,7 @@ def perform5(+case_a: Bool, +pre: L.Pre, +ctx: SBase.Ctx, +root: String, +target
     switch_b(pre, ctx, root, target, temail, ts, seq_text, seq, l, oauth, tcreds, tcfg, SSeq.str_or(L.lv_slot(l, seq), "")))
 
 def perform4(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pre: L.Pre, +ts: String, +seq_text: String, +seq: Json.Json, +temail: String, +l: L.Live, +tcreds: String, +tcfg: Json.Json, +oauth: Json.Json) -> Act.of(Json.Json):
-  perform5(force || String.is_empty(L.lv_email(l)) || Bool.not(B.is_some_str(L.lv_slot(l, seq))), pre, ctx, root, target, ts, seq_text, seq, temail, l, tcreds, tcfg, oauth)
+  perform5(force || String.is_empty(L.lv_email(l)) || String.is_empty(L.lv_creds(l)) || Bool.not(B.is_some_str(L.lv_slot(l, seq))), pre, ctx, root, target, ts, seq_text, seq, temail, l, tcreds, tcfg, oauth)
 
 def perform7(+ok: Bool, +ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pre: L.Pre, +ts: String, +seq_text: String, +seq: Json.Json, +temail: String, +l: L.Live, +tcreds: String, +tcfg: Json.Json) -> Act.of(Json.Json):
   Act.cond(Json.Json, ok,
