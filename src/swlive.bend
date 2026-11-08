@@ -194,9 +194,15 @@ def write_live_creds2(+api_key: Bool, +ctx: SBase.Ctx, +creds: String) -> Act.of
         FsW.mkdir_p(Fs.dirname(SBase.live_creds_path(ctx)))
         SIo.write_secret(SBase.live_creds_path(ctx), creds)
 
+# A setup-token (no refreshToken) must never land in a login store Claude Code
+# reads: every running session would pick it up and lose its real login. It
+# reaches a session only through CLAUDE_CODE_OAUTH_TOKEN at launch.
+def is_setup_token(+creds: String) -> Bool:
+  SBase.nonempty(creds) && Bool.not(SBase.looks_like_api_key(creds)) && String.is_empty(SSeq.field_str(SSeq.get_or("claudeAiOauth", Json.unwrap(Json.parse(creds)), Json.JNull{}), "refreshToken"))
+
 # Put the target's credential live. An API key leaves no .credentials.json.
 def write_live_creds(+ctx: SBase.Ctx, +creds: String) -> Act.of(Unit):
-  write_live_creds2(SBase.looks_like_api_key(creds), ctx, creds)
+  Act.cond(Unit, is_setup_token(creds), Act.pure(Unit, Unit{}), write_live_creds2(SBase.looks_like_api_key(creds), ctx, creds))
 
 def write_cfg(+ctx: SBase.Ctx, +j: Json.Json) -> Act.of(Unit):
   SIo.write_secret(SBase.global_config_path(ctx), Json.emit_pretty(j))
