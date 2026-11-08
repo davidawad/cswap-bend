@@ -50,8 +50,20 @@ def setup_dirs(+root: String) -> Act.of(Unit):
     secure_dir(SBase.creds_dir(root))
     secure_dir(SBase.configs_dir(root))
 
+# Where a write to `path` must land: the target of a symlink (so the link is
+# never replaced by a plain file, dot-zq9l6v), else the path itself.
+def link_target2(r: Fs.Res(String), +path: String) -> String:
+  match r:
+    case Done{+t}:
+      SBase.sel.s(SBase.nonempty(SBase.strip_chars(t, "\n")), SBase.strip_chars(t, "\n"), path)
+    case Fail{e}:
+      path
+
+def link_target(+path: String) -> IO(String):
+  IO.bind(Fs.Res(String), String, Fs.tool("/usr/bin/readlink", [path]), r => IO.pure(String, link_target2(r, path)))
+
 def write_secret(+path: String, +text: String) -> Act.of(Unit):
-  FsW.write_atomic(path, text, "600")
+  Act.bind(String, Unit, Act.lift(String, link_target(path)), t => FsW.write_atomic(t, text, "600"))
 
 def write_seq(+root: String, +j: Json.Json) -> Act.of(Unit):
   write_secret(SBase.seq_path(root), Json.emit_pretty(j))
