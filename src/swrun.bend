@@ -200,11 +200,28 @@ def verify_live(+ctx: SBase.Ctx, +delay_ms: U32, +target: String, +temail: Strin
     l : L.Live <- L.read_live(ctx)
     verify2(l, target, temail, torg)
 
+# The organizationUuid the SLOT records (what status matches against), not the
+# one the backed-up config happens to carry.
+def pick_org2(+m: Maybe<&2, Json.Json>) -> String:
+  match m:
+    case None{}:
+      ""
+    case Some{r}:
+      SSeq.field_str(r, "organizationUuid")
+
+def pick_org(+m: Maybe<&2, Json.Json>, +target: String) -> String:
+  match m:
+    case None{}:
+      ""
+    case Some{seq}:
+      pick_org2(SSeq.slot_record(seq, target))
+
 def do_switch2(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts, +pre: L.Pre) -> Act.of(Json.Json):
   do ActM<Json.Json>:
     ts : String <- SIo.now_iso()
     +op : Json.Json <- L.with_locks(Json.Json, ctx, perform_locked(ctx, target, force, pre, ts))
-    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SSeq.field_str(op, "targetOrg"))
+    +seqm : Maybe<&2, Json.Json> <- SIo.read_seq(SBase.root_of(ctx))
+    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), pick_org(seqm, target))
     verify_live(ctx, L.opts_delay(opts), target, SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SSeq.field_str(op, "targetOrg"))
     return op
 
