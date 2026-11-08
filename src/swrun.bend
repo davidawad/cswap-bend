@@ -221,8 +221,10 @@ def do_switch2(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts, +p
     ts : String <- SIo.now_iso()
     +op : Json.Json <- L.with_locks(Json.Json, ctx, perform_locked(ctx, target, force, pre, ts))
     +seqm : Maybe<&2, Json.Json> <- SIo.read_seq(SBase.root_of(ctx))
-    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), pick_org(seqm, target))
-    verify_live(ctx, L.opts_delay(opts), target, SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SSeq.field_str(op, "targetOrg"))
+    +org : String = pick_org(seqm, target)
+    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), org)
+    pick : Json.Json <- Act.lift(Json.Json, Tokensrc.read_pick())
+    verify_live(ctx, L.opts_delay(opts), target, SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SBase.sel.s(SBase.nonempty(SSeq.field_str(pick, "account")), org, SSeq.field_str(op, "targetOrg")))
     return op
 
 def do_switch(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts) -> Act.of(Json.Json):
