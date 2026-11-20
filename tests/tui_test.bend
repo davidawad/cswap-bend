@@ -168,17 +168,20 @@ def log_skips_blank() -> {R.log_lines(["", "x", "  "]) == ["x"] : List<&2, Strin
 
 # ---- arguments
 
-def args_flags() -> {Run.parse(3n, ["--once", "--interval", "5"], Run.default_opts()) == Run.Opts{True{}, 5, True{}, ""} : Run.Opts}:
+def args_flags() -> {Run.parse(3n, ["--once", "--interval", "5"], Run.default_opts()) == Run.Opts{True{}, 5, True{}, False{}, ""} : Run.Opts}:
   {==}
 
-def args_no_color() -> {Run.parse(1n, ["--no-color"], Run.default_opts()) == Run.Opts{False{}, 2, False{}, ""} : Run.Opts}:
+def args_log() -> {Run.parse(1n, ["--log"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, True{}, ""} : Run.Opts}:
   {==}
 
-def args_unknown() -> {Run.parse(1n, ["--x"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, "unknown argument --x"} : Run.Opts}:
+def args_no_color() -> {Run.parse(1n, ["--no-color"], Run.default_opts()) == Run.Opts{False{}, 2, False{}, False{}, ""} : Run.Opts}:
   {==}
 
-def args_interval_zero() -> {Run.parse(2n, ["--interval", "0"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, "--interval needs a whole number of seconds"} : Run.Opts}:
+def args_unknown() -> {Run.parse(1n, ["--x"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, False{}, "unknown argument --x"} : Run.Opts}:
   {==}
 
-def args_interval_missing() -> {Run.parse(1n, ["--interval"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, "--interval needs a whole number of seconds"} : Run.Opts}:
+def args_interval_zero() -> {Run.parse(2n, ["--interval", "0"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, False{}, "--interval needs a whole number of seconds"} : Run.Opts}:
+  {==}
+
+def args_interval_missing() -> {Run.parse(1n, ["--interval"], Run.default_opts()) == Run.Opts{False{}, 2, True{}, False{}, "--interval needs a whole number of seconds"} : Run.Opts}:
   {==}

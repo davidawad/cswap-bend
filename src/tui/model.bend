@@ -24,7 +24,7 @@ type Snap is Data:
 
 # How to draw it: terminal width in columns, colour on or off (NO_COLOR).
 type View is Data:
-  View{width: U32, color: Bool}
+  View{width: U32, color: Bool, log: Bool}
 
 def win_label(+w: Win) -> String:
   match w:

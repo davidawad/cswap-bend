@@ -13,7 +13,7 @@ import ./num.bend as N
 #   <state dir>/daemon-status.json, daemon.log   (state dir: $CSWAP_STATE_DIR,
 #                                                  else the backup root)
 #
-# Flags: --once (draw one frame and exit), --interval N (seconds between
+# Flags: --log (also show the daemon log tail; hidden by default), --once (draw one frame and exit), --interval N (seconds between
 # frames, default 2), --no-color. NO_COLOR and $COLUMNS (default 100) are
 # honoured; $CSWAP_TUI_NOW (unix seconds) pins the clock for tests.
 #
@@ -22,22 +22,22 @@ import ./num.bend as N
 # reference's `s <slot>` switch action is not offered; use `cswap switch`.
 
 type Opts is Data:
-  Opts{once: Bool, interval: U32, color: Bool, bad: String}
+  Opts{once: Bool, interval: U32, color: Bool, log: Bool, bad: String}
 
 def usage_text() -> String:
-  "usage: cswap tui [--once] [--interval SECONDS] [--no-color]"
+  "usage: cswap tui [--once] [--interval SECONDS] [--no-color] [--log]"
 
 # ---- arguments ----------------------------------------------------------------------------
 
 def set_interval(+o: Opts, +n: U32) -> Opts:
   match o:
-    case Opts{once, i, c, b}:
-      Opts{once, n, c, b}
+    case Opts{once, i, c, lg, b}:
+      Opts{once, n, c, lg, b}
 
 def with_bad(+o: Opts, +msg: String) -> Opts:
   match o:
-    case Opts{once, i, c, b}:
-      Opts{once, i, c, msg}
+    case Opts{once, i, c, lg, b}:
+      Opts{once, i, c, lg, msg}
 
 def with_interval(+o: Opts, +v: Maybe<&2, U32>) -> Opts:
   match v:
@@ -48,13 +48,18 @@ def with_interval(+o: Opts, +v: Maybe<&2, U32>) -> Opts:
 
 def with_once(+o: Opts) -> Opts:
   match o:
-    case Opts{once, i, c, b}:
-      Opts{True{}, i, c, b}
+    case Opts{once, i, c, lg, b}:
+      Opts{True{}, i, c, lg, b}
 
 def with_plain(+o: Opts) -> Opts:
   match o:
-    case Opts{once, i, c, b}:
-      Opts{once, i, False{}, b}
+    case Opts{once, i, c, lg, b}:
+      Opts{once, i, False{}, lg, b}
+
+def with_log(+o: Opts) -> Opts:
+  match o:
+    case Opts{once, i, c, lg, b}:
+      Opts{once, i, c, True{}, b}
 
 def keep(+ok: Bool, +m: Maybe<&2, U32>) -> Maybe<&2, U32>:
   match ok:
@@ -71,7 +76,7 @@ def positive(+m: Maybe<&2, U32>) -> Maybe<&2, U32>:
       None{}
 
 def default_opts() -> Opts:
-  Opts{False{}, 2, True{}, ""}
+  Opts{False{}, 2, True{}, False{}, ""}
 
 # ---- reading ------------------------------------------------------------------------------------
 
@@ -180,17 +185,22 @@ def color_of(+want: Bool, +no_color: String) -> Bool:
 
 def opts_color(+o: Opts) -> Bool:
   match o:
-    case Opts{once, i, c, b}:
+    case Opts{once, i, c, lg, b}:
       c
+
+def opts_log(+o: Opts) -> Bool:
+  match o:
+    case Opts{once, i, c, lg, b}:
+      lg
 
 def opts_once(+o: Opts) -> Bool:
   match o:
-    case Opts{once, i, c, b}:
+    case Opts{once, i, c, lg, b}:
       once
 
 def opts_secs(+o: Opts) -> U32:
   match o:
-    case Opts{once, i, c, b}:
+    case Opts{once, i, c, lg, b}:
       i
 
 def once_frame(+v: M.View, +version: String, +root: String, +state: String) -> IO(Unit):
@@ -207,11 +217,11 @@ def run_with(+o: Opts, +version: String, +v: M.View, +root: String, +state: Stri
   pick_mode(opts_once(o), v, version, root, state, opts_secs(o))
 
 def run(+o: Opts, +version: String, +cols: String, +no_color: String, +home: String, +state: String) -> IO(Unit):
-  run_with(o, version, M.View{width_of(cols), color_of(opts_color(o), no_color)}, home ++ "/.claude-swap-backup", state)
+  run_with(o, version, M.View{width_of(cols), color_of(opts_color(o), no_color), opts_log(o)}, home ++ "/.claude-swap-backup", state)
 
 def opts_bad(+o: Opts) -> String:
   match o:
-    case Opts{once, i, c, b}:
+    case Opts{once, i, c, lg, b}:
       b
 
 def start2(+o: Opts, +version: String, +cols: String, +no_color: String, +home: String, +st: String) -> IO(Unit):
@@ -248,9 +258,16 @@ def step_pick(+once: Bool, +plain: Bool, +iv: Bool, +o: Opts, +a: String, +v: Ma
     case False{} False{} False{}:
       with_bad(o, "unknown argument " ++ a)
 
+def step_log(+log: Bool, +o: Opts, +a: String, +v: Maybe<&2, String>) -> Opts:
+  match log:
+    case True{}:
+      with_log(o)
+    case False{}:
+      step_pick(String.eq(a, "--once"), String.eq(a, "--no-color"), String.eq(a, "--interval"), o, a, v)
+
 # One argument: its effect on the options. `v` is the word after it.
 def step(+o: Opts, +a: String, +v: Maybe<&2, String>) -> Opts:
-  step_pick(String.eq(a, "--once"), String.eq(a, "--no-color"), String.eq(a, "--interval"), o, a, v)
+  step_log(String.eq(a, "--log"), o, a, v)
 
 def head_opt(+l: List<&2, String>) -> Maybe<&2, String>:
   match l:

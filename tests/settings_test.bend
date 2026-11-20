@@ -158,7 +158,7 @@ def models_commas() -> {Setload.model_names(" , ,") == [] : List<&2, String>}:
 
 # ---- lenient load -----------------------------------------------------------------
 
-def defaults() -> {cooked("{}") == "{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 90.0, \"intervalSeconds\": 60.0, \"cooldownSeconds\": 300.0, \"hysteresisPct\": 10.0, \"strategy\": \"best\", \"includeApiKeyAccounts\": false, \"unhealthyTicks\": 3, \"model\": null}, \"ui\": {\"theme\": \"auto\"}}" : String}:
+def defaults() -> {cooked("{}") == "{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 90.0, \"intervalSeconds\": 60.0, \"cooldownSeconds\": 300.0, \"hysteresisPct\": 10.0, \"strategy\": \"best\", \"includeApiKeyAccounts\": false, \"unhealthyTicks\": 3, \"model\": null}, \"ui\": {\"theme\": \"auto\", \"tuiShowFiveHour\": false}}" : String}:
   {==}
 
 def not_object_is_defaults() -> {cooked("[1, 2]") == cooked("{}") : String}:
@@ -233,10 +233,10 @@ def model_empty_string_is_none() -> {Setload.model(Setload.normalize(j("{\"autos
 def model_number_is_none() -> {Setload.model(Setload.normalize(j("{\"autoswitch\": {\"model\": 5}}"))) == [] : List<&2, String>}:
   {==}
 
-def theme_unknown_is_default() -> {Json.get("ui", Setload.normalize(j("{\"ui\": {\"theme\": \"pink\"}}"))) == Some{j("{\"theme\": \"auto\"}")} : Maybe<&2, Json.Json>}:
+def theme_unknown_is_default() -> {Json.get("ui", Setload.normalize(j("{\"ui\": {\"theme\": \"pink\"}}"))) == Some{j("{\"theme\": \"auto\", \"tuiShowFiveHour\": false}")} : Maybe<&2, Json.Json>}:
   {==}
 
-def theme_kept() -> {Json.get("ui", Setload.normalize(j("{\"ui\": {\"theme\": \"dark\"}}"))) == Some{j("{\"theme\": \"dark\"}")} : Maybe<&2, Json.Json>}:
+def theme_kept() -> {Json.get("ui", Setload.normalize(j("{\"ui\": {\"theme\": \"dark\"}}"))) == Some{j("{\"theme\": \"dark\", \"tuiShowFiveHour\": false}")} : Maybe<&2, Json.Json>}:
   {==}
 
 def unknown_keys_survive() -> {Json.get("extra", Setload.normalize(j("{\"extra\": {\"a\": [1, null]}, \"autoswitch\": {\"x\": 1}}"))) == Some{j("{\"a\": [1, null]}")} : Maybe<&2, Json.Json>}:
@@ -262,7 +262,7 @@ def key_known() -> {Settings.dotted(sp("autoswitch.intervalSeconds")) == "autosw
 def key_ui() -> {Settings.dotted(sp("ui.theme")) == "ui.theme" : String}:
   {==}
 
-def key_unknown() -> {Settings.spec_of("autoswitch.nope") == Fail{"unknown setting 'autoswitch.nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme"} : Result<&2, &2, String, Settings.Spec>}:
+def key_unknown() -> {Settings.spec_of("autoswitch.nope") == Fail{"unknown setting 'autoswitch.nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme, ui.tuiShowFiveHour"} : Result<&2, &2, String, Settings.Spec>}:
   {==}
 
 def key_is_case_sensitive() -> {Settings.dotted(sp("autoswitch.Threshold")) == "." : String}:
@@ -433,16 +433,16 @@ def get_text_default() -> {Setcmd.get.spec(False{}, Settings.spec_of("autoswitch
 def get_json_default_not_set() -> {Setcmd.get.spec(True{}, Settings.spec_of("ui.theme"), j("{}")) == Cmd.Out{0, "{\n  \"schemaVersion\": 1,\n  \"key\": \"ui.theme\",\n  \"value\": \"auto\",\n  \"isSet\": false\n}\n", ""} : Cmd.Out}:
   {==}
 
-def get_unknown_key_text() -> {Setcmd.get.spec(False{}, Settings.spec_of("nope"), j("{}")) == Cmd.fail("unknown setting 'nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme") : Cmd.Out}:
+def get_unknown_key_text() -> {Setcmd.get.spec(False{}, Settings.spec_of("nope"), j("{}")) == Cmd.fail("unknown setting 'nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme, ui.tuiShowFiveHour") : Cmd.Out}:
   {==}
 
-def get_unknown_key_json() -> {Setcmd.get.spec(True{}, Settings.spec_of("nope"), j("{}")) == Cmd.json_fail("ConfigError", "unknown setting 'nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme") : Cmd.Out}:
+def get_unknown_key_json() -> {Setcmd.get.spec(True{}, Settings.spec_of("nope"), j("{}")) == Cmd.json_fail("ConfigError", "unknown setting 'nope'\nValid keys: autoswitch.threshold, autoswitch.intervalSeconds, autoswitch.cooldownSeconds, autoswitch.hysteresisPct, autoswitch.strategy, autoswitch.includeApiKeyAccounts, autoswitch.unhealthyTicks, autoswitch.model, ui.theme, ui.tuiShowFiveHour") : Cmd.Out}:
   {==}
 
-def step4_list_json() -> {Setcmd.list.out("/h/.claude-swap-backup", True{}, j("{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 85.0, \"strategy\": \"best\"}}")) == Cmd.Out{0, "{\n  \"schemaVersion\": 1,\n  \"path\": \"/h/.claude-swap-backup/settings.json\",\n  \"settings\": [\n    {\n      \"key\": \"autoswitch.threshold\",\n      \"value\": 85.0,\n      \"isSet\": true\n    },\n    {\n      \"key\": \"autoswitch.intervalSeconds\",\n      \"value\": 60.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.cooldownSeconds\",\n      \"value\": 300.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.hysteresisPct\",\n      \"value\": 10.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.strategy\",\n      \"value\": \"best\",\n      \"isSet\": true\n    },\n    {\n      \"key\": \"autoswitch.includeApiKeyAccounts\",\n      \"value\": false,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.unhealthyTicks\",\n      \"value\": 3,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.model\",\n      \"value\": null,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"ui.theme\",\n      \"value\": \"auto\",\n      \"isSet\": false\n    }\n  ]\n}\n", ""} : Cmd.Out}:
+def step4_list_json() -> {Setcmd.list.out("/h/.claude-swap-backup", True{}, j("{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 85.0, \"strategy\": \"best\"}}")) == Cmd.Out{0, "{\n  \"schemaVersion\": 1,\n  \"path\": \"/h/.claude-swap-backup/settings.json\",\n  \"settings\": [\n    {\n      \"key\": \"autoswitch.threshold\",\n      \"value\": 85.0,\n      \"isSet\": true\n    },\n    {\n      \"key\": \"autoswitch.intervalSeconds\",\n      \"value\": 60.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.cooldownSeconds\",\n      \"value\": 300.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.hysteresisPct\",\n      \"value\": 10.0,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.strategy\",\n      \"value\": \"best\",\n      \"isSet\": true\n    },\n    {\n      \"key\": \"autoswitch.includeApiKeyAccounts\",\n      \"value\": false,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.unhealthyTicks\",\n      \"value\": 3,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"autoswitch.model\",\n      \"value\": null,\n      \"isSet\": false\n    },\n    {\n      \"key\": \"ui.theme\",\n      \"value\": \"auto\",\n      \"isSet\": false\n    },\n    {\n      \"key\": \"ui.tuiShowFiveHour\",\n      \"value\": false,\n      \"isSet\": false\n    }\n  ]\n}\n", ""} : Cmd.Out}:
   {==}
 
-def list_text() -> {Setcmd.list.out("/h/.claude-swap-backup", False{}, j("{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 85.0, \"strategy\": \"best\"}}")) == Cmd.Out{0, "autoswitch.threshold              85    \nautoswitch.intervalSeconds        60      (default)\nautoswitch.cooldownSeconds        300     (default)\nautoswitch.hysteresisPct          10      (default)\nautoswitch.strategy               best  \nautoswitch.includeApiKeyAccounts  false   (default)\nautoswitch.unhealthyTicks         3       (default)\nautoswitch.model                  (none)  (default)\nui.theme                          auto    (default)\n", ""} : Cmd.Out}:
+def list_text() -> {Setcmd.list.out("/h/.claude-swap-backup", False{}, j("{\"schemaVersion\": 1, \"autoswitch\": {\"threshold\": 85.0, \"strategy\": \"best\"}}")) == Cmd.Out{0, "autoswitch.threshold              85    \nautoswitch.intervalSeconds        60      (default)\nautoswitch.cooldownSeconds        300     (default)\nautoswitch.hysteresisPct          10      (default)\nautoswitch.strategy               best  \nautoswitch.includeApiKeyAccounts  false   (default)\nautoswitch.unhealthyTicks         3       (default)\nautoswitch.model                  (none)  (default)\nui.theme                          auto    (default)\nui.tuiShowFiveHour                false   (default)\n", ""} : Cmd.Out}:
   {==}
 
 def set_text_out() -> {Setwrite.fmt.val(True{}, Json.JNum{"85.0"}) == "85" : String}:

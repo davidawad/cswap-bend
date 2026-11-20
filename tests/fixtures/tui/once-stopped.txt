@@ -13,9 +13,3 @@ cswap tui  cswap-bend 0.0.1
  5  st5@example.test  [personal]  (disabled)   http-429
 
 next best  2 st2@example.test · 8% free
-
-daemon log
-  08:57:45  info tick no-action
-  08:58:45  info tick no-action
-  08:59:45  warn tick blocked
-  not json at all

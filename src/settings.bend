@@ -315,7 +315,8 @@ def specs() -> List<&2, Spec>:
    Spec{"autoswitch", "includeApiKeyAccounts", KBool{}, "", "", "", Json.JBool{False{}}},
    spec.num("unhealthyTicks", KInt{}, "1", "100", "3"),
    Spec{"autoswitch", "model", KString{}, "", "", "", Json.JNull{}},
-   Spec{"ui", "theme", KChoice{}, "", "", "dark,light,auto", Json.JStr{"auto"}}]
+   Spec{"ui", "theme", KChoice{}, "", "", "dark,light,auto", Json.JStr{"auto"}},
+   Spec{"ui", "tuiShowFiveHour", KBool{}, "", "", "", Json.JBool{False{}}}]
 
 def dotted(+sp: Spec) -> String:
   match sp:

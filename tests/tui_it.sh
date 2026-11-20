@@ -44,6 +44,13 @@ home $$
 frame 100 NO_COLOR=1 "$it" --once | sed "s/pid $$/pid PID/" > "$d/live.txt"
 same "$fx/once-live.txt" "$d/live.txt"
 
+# ui.tuiShowFiveHour unset: the 5h rows are hidden (the fixture sets it true for the goldens)
+printf '{"autoswitch": {"threshold": 90}}' > "$d/home/.claude-swap-backup/settings.json"
+frame 100 NO_COLOR=1 "$it" --once > "$d/no5h.txt"
+! grep -q "5h" "$d/no5h.txt" || fail "5h rows shown without ui.tuiShowFiveHour"
+grep -q "7d" "$d/no5h.txt" || fail "7d rows missing"
+cp "$fx/state/settings.json" "$d/home/.claude-swap-backup/settings.json"
+
 # the live header shows the daemon's own config (85 / 30s), not settings.json (90 / 60s)
 grep -q "threshold 85% · every 30s" "$d/live.txt" || fail "live header must show the daemon's threshold"
 
@@ -79,7 +86,10 @@ same "$fx/once-stopped.txt" "$d/stripped.txt"
 rm -rf "$d/empty" && mkdir -p "$d/empty"
 HOME="$d/empty" TZ=UTC CSWAP_TUI_NOW=$NOW COLUMNS=100 NO_COLOR=1 "$it" --once > "$d/none.txt"
 grep -q "No managed accounts yet" "$d/none.txt" || fail "empty state"
-grep -q "no daemon log yet" "$d/none.txt" || fail "empty log"
+grep -q "no remaining accounts" "$d/none.txt" || fail "empty next best"
+! grep -q "daemon log" "$d/none.txt" || fail "daemon log shown without --log"
+HOME="$d/empty" TZ=UTC CSWAP_TUI_NOW=$NOW COLUMNS=100 NO_COLOR=1 "$it" --once --log > "$d/nonelog.txt"
+grep -q "no daemon log yet" "$d/nonelog.txt" || fail "empty log with --log"
 
 # the loop redraws every N seconds until killed
 home 999999

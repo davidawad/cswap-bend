@@ -211,7 +211,7 @@ def take(+a: M.Acct, +f: Maybe<&2, U32>, +cur: Maybe<&2, Best>) -> Maybe<&2, Bes
     case None{}:
       cur
     case Some{x}:
-      take_if(better(cur, x), a, x, cur)
+      take_if(U32.is_gt(x, 0) && better(cur, x), a, x, cur)
 
 def next_pick(+ok: Bool, +a: M.Acct, +cur: Maybe<&2, Best>) -> Maybe<&2, Best>:
   match ok:
@@ -237,7 +237,7 @@ def best_name(+b: Best) -> String:
 def best_line(+m: Maybe<&2, Best>) -> List<&2, F.Seg>:
   match m:
     case None{}:
-      [C.muted("next best  none (no other account has a reading)")]
+      [C.muted("next best  no remaining accounts")]
     case Some{b}:
       [C.muted("next best  "), F.sg(best_name(b), F.RAccent{}), C.muted(" · " ++ pct_label(best_free(b)) ++ "% free")]
 
@@ -280,8 +280,18 @@ def accts_of(+s: M.Snap) -> List<&2, M.Acct>:
 def head_lines(+s: M.Snap) -> List<&2, List<&2, F.Seg>>:
   [title(hdr_of(s)), state_line(hdr_of(s), now_of(s)), []]
 
-def foot_lines(+s: M.Snap) -> List<&2, List<&2, F.Seg>>:
-  lines_cat([[], best_line(next_best(accts_of(s), None{})), [], [F.sg("daemon log", F.RBold{})]], log_lines(log_of(s)))
+def log_block(+s: M.Snap) -> List<&2, List<&2, F.Seg>>:
+  lines_cat([[], [F.sg("daemon log", F.RBold{})]], log_lines(log_of(s)))
+
+def log_if(+show: Bool, +s: M.Snap) -> List<&2, List<&2, F.Seg>>:
+  match show:
+    case True{}:
+      log_block(s)
+    case False{}:
+      Nil{}
+
+def foot_lines(+s: M.Snap, +show_log: Bool) -> List<&2, List<&2, F.Seg>>:
+  lines_cat([[], best_line(next_best(accts_of(s), None{}))], log_if(show_log, s))
 
 def fit_all(+ls: List<&2, List<&2, F.Seg>>, +w: Nat) -> List<&2, List<&2, F.Seg>>:
   match ls:
@@ -292,9 +302,14 @@ def fit_all(+ls: List<&2, List<&2, F.Seg>>, +w: Nat) -> List<&2, List<&2, F.Seg>
 
 def viewcolor(+v: M.View) -> Bool:
   match v:
-    case M.View{w, c}:
+    case M.View{w, c, l}:
       c
+
+def viewlog(+v: M.View) -> Bool:
+  match v:
+    case M.View{w, c, l}:
+      l
 
 # The whole frame: each line cut to the terminal width, painted unless NO_COLOR.
 def frame(+s: M.Snap, +v: M.View) -> String:
-  F.render(fit_all(lines_cat(head_lines(s), lines_cat(accounts_lines(s, v), foot_lines(s))), U32.to_nat(C.view_width(v))), viewcolor(v))
+  F.render(fit_all(lines_cat(head_lines(s), lines_cat(accounts_lines(s, v), foot_lines(s, viewlog(v)))), U32.to_nat(C.view_width(v))), viewcolor(v))

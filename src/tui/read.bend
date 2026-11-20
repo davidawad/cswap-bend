@@ -255,8 +255,48 @@ def accts(+nums: List<&2, U32>, +seq: Json.Json, +cache: Json.Json, +status: Jso
     case Con{n, t}:
       acct_cons(acct_opt(U32.show(n), Json.get(U32.show(n), SSeq.accounts_of(seq)), cache, status, active, now), accts(t, seq, cache, status, active, now))
 
+def not_five(+w: M.Win) -> Bool:
+  Bool.not(String.eq(M.win_label(w), "5h"))
+
+def keep_win(+ok: Bool, +w: M.Win, +rest: List<&2, M.Win>) -> List<&2, M.Win>:
+  match ok:
+    case True{}:
+      Con{w, rest}
+    case False{}:
+      rest
+
+def drop_five(+ws: List<&2, M.Win>) -> List<&2, M.Win>:
+  match ws:
+    case Nil{}:
+      Nil{}
+    case Con{w, t}:
+      keep_win(not_five(w), w, drop_five(t))
+
+def strip_five(+a: M.Acct) -> M.Acct:
+  match a:
+    case M.Acct{s, e, al, t, act, dis, ws, age, note}:
+      M.Acct{s, e, al, t, act, dis, drop_five(ws), age, note}
+
+def strip_all(+as: List<&2, M.Acct>) -> List<&2, M.Acct>:
+  match as:
+    case Nil{}:
+      Nil{}
+    case Con{a, t}:
+      Con{strip_five(a), strip_all(t)}
+
+# ui.tuiShowFiveHour in settings.json: the 5h rows are hidden unless it is true.
+def show_five(+settings: Json.Json) -> Bool:
+  flag_of(Json.get("tuiShowFiveHour", N.get_or_null("ui", settings)))
+
+def five_pick(+show: Bool, +as: List<&2, M.Acct>) -> List<&2, M.Acct>:
+  match show:
+    case True{}:
+      as
+    case False{}:
+      strip_all(as)
+
 def snap_of(+version: String, +live: Bool, +now: U32, +off: U32, +seq: Json.Json, +cache: Json.Json, +status: Json.Json, +settings: Json.Json, +log_t: String) -> M.Snap:
-  M.Snap{now, off, hdr_of(version, live, status, settings), accts(SSeq.seq_nums(seq), seq, cache, status, active_slot(status, seq), now), log_lines(String.lines(log_t))}
+  M.Snap{now, off, hdr_of(version, live, status, settings), five_pick(show_five(settings), accts(SSeq.seq_nums(seq), seq, cache, status, active_slot(status, seq), now)), log_lines(String.lines(log_t))}
 
 # Everything the dashboard shows, from the text of sequence.json,
 # cache/usage.json, daemon-status.json, settings.json and the tail of

@@ -127,7 +127,7 @@ def pad2(+s: String) -> String:
 
 def view_width(+v: M.View) -> U32:
   match v:
-    case M.View{w, c}:
+    case M.View{w, c, l}:
       w
 
 # Columns left for the suffix after indent, label, bar, percent and gap.

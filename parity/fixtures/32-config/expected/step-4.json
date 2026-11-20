@@ -48,6 +48,11 @@
         "key": "ui.theme",
         "value": "auto",
         "isSet": false
+      },
+      {
+        "key": "ui.tuiShowFiveHour",
+        "value": false,
+        "isSet": false
       }
     ]
   },
