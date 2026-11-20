@@ -167,13 +167,19 @@ def frame_io(+v: M.View, +version: String, +root: String, +state: String) -> IO(
 
 # ---- the loop -------------------------------------------------------------------------------------------
 
-def clear() -> String:
-  "\u{1B}[H\u{1B}[2J"
+# Redraw in place: cursor home, each line cleared to its end, then everything
+# below cleared. No ESC[2J, so a frame taller than the terminal scrolls into the
+# terminal's own scrollback instead of being wiped on every tick.
+def home() -> String:
+  "\u{1B}[H"
+
+def paint(+f: String) -> String:
+  home() ++ String.join(String.split(f, '\n'), "\u{1B}[K\n") ++ "\u{1B}[K\u{1B}[J"
 
 @unsafe def forever(+v: M.View, +version: String, +root: String, +state: String, +secs: U32) -> IO(Unit):
   do IO<Unit>:
     f : String <- frame_io(v, version, root, state)
-    IO.write(clear() ++ f ++ "\n")
+    IO.write(paint(f) ++ "\n")
     IO.sleep((secs * 1000 : U32))
     forever(v, version, root, state, secs)
 
