@@ -143,8 +143,8 @@ def block(+a: M.Acct, +v: M.View, +h: M.Hdr, +now: U32, +off: U32) -> List<&2, L
 def block_join(+b: List<&2, List<&2, F.Seg>>, +rest: List<&2, List<&2, F.Seg>>, +prev: Bool, +first: Bool) -> List<&2, List<&2, F.Seg>>:
   lines_cat(gap_if(Bool.not(first) && (prev || is_multi(b))), lines_cat(b, rest))
 
-# The account lines in slot order. A blank line separates blocks when either
-# side is a multi-line card.
+# The account lines, soonest weekly reset first. A blank line separates
+# blocks when either side is a multi-line card.
 def blocks(+as: List<&2, M.Acct>, +v: M.View, +h: M.Hdr, +now: U32, +off: U32, +prev: Bool, +first: Bool) -> List<&2, List<&2, F.Seg>>:
   match as:
     case Nil{}:
@@ -152,10 +152,59 @@ def blocks(+as: List<&2, M.Acct>, +v: M.View, +h: M.Hdr, +now: U32, +off: U32, +
     case Con{a, t}:
       block_join(block(a, v, h, now, off), blocks(t, v, h, now, off, is_multi(block(a, v, h, now, off)), False{}), prev, first)
 
+# ---- the account order -----------------------------------------------------------------
+
+def reset_7d_pick(+hit: Bool, +w: M.Win, +rest: Maybe<&2, U32>) -> Maybe<&2, U32>:
+  match hit:
+    case True{}:
+      M.win_reset(w)
+    case False{}:
+      rest
+
+# When the account's 7d window resets; None when it has none or it is unknown.
+def reset_7d(+ws: List<&2, M.Win>) -> Maybe<&2, U32>:
+  match ws:
+    case Nil{}:
+      None{}
+    case Con{w, t}:
+      reset_7d_pick(String.eq(M.win_label(w), "7d"), w, reset_7d(t))
+
+# a goes no later than b: known resets ascending, unknown ones last.
+def reset_le(+a: Maybe<&2, U32>, +b: Maybe<&2, U32>) -> Bool:
+  match a b:
+    case _ None{}:
+      True{}
+    case None{} Some{y}:
+      False{}
+    case Some{x} Some{y}:
+      U32.is_le(x, y)
+
+def insert_pick(+first: Bool, +a: M.Acct, +h: M.Acct, +t: List<&2, M.Acct>, +ins: List<&2, M.Acct>) -> List<&2, M.Acct>:
+  match first:
+    case True{}:
+      a <> h <> t
+    case False{}:
+      h <> ins
+
+def insert_by_reset(+a: M.Acct, +as: List<&2, M.Acct>) -> List<&2, M.Acct>:
+  match as:
+    case Nil{}:
+      [a]
+    case Con{h, t}:
+      insert_pick(reset_le(reset_7d(M.acct_wins(a)), reset_7d(M.acct_wins(h))), a, h, t, insert_by_reset(a, t))
+
+# Soonest 7d reset first; accounts with no known reset keep slot order at the end.
+def by_reset(+as: List<&2, M.Acct>) -> List<&2, M.Acct>:
+  match as:
+    case Nil{}:
+      Nil{}
+    case Con{a, t}:
+      insert_by_reset(a, by_reset(t))
+
 def accounts_lines(+s: M.Snap, +v: M.View) -> List<&2, List<&2, F.Seg>>:
   match s:
     case M.Snap{now, off, h, as, lg}:
-      empty_or(as, blocks(as, v, h, now, off, False{}, True{}))
+      empty_or(as, blocks(by_reset(as), v, h, now, off, False{}, True{}))
 
 def max_opt(+a: Maybe<&2, U32>, +b: Maybe<&2, U32>) -> Maybe<&2, U32>:
   match a b:

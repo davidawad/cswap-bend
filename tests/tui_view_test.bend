@@ -32,3 +32,14 @@ def next_best_skips_spent() -> {V.next_best([M.Acct{"2", "b", "", "p", False{}, 
 
 def no_log_by_default() -> {V.frame(snap(), M.View{80, False{}, False{}}) == "cswap tui  cswap-bend 0.0.1\n● auto-switch LIVE · threshold 90% · every 60s · next poll in 45s · pid 4242\n\n 1  work (a@x.test)  [personal]   ● active\n    5h ━━━━━━━━━━━━━━─────────────┃──  47%  resets 2h 13m · 11:13\n    7d ━━━━━━━━━━━━━━━━━━╸────────┃──  62%  resets 1d 4h · Oct 24 13:00\n\n 2  b@x.test  [Acme]   5h 92% · 7d 63%\n\nnext best  2 b@x.test · 8% free" : String}:
   {==}
+
+def slots(+as: List<&2, M.Acct>) -> List<&2, String>:
+  match as:
+    case Nil{}:
+      Nil{}
+    case Con{a, t}:
+      Con{M.acct_slot(a), slots(t)}
+
+# Soonest 7d reset first (5h ignored, active included), ties in slot order, unknown last.
+def by_reset_soonest_first() -> {slots(V.by_reset([M.Acct{"1", "a", "", "p", False{}, False{}, [M.Win{"7d", Some{9000}, None{}}], None{}, ""}, M.Acct{"2", "b", "", "p", False{}, False{}, [M.Win{"5h", Some{10}, Some{100}}, M.Win{"7d", Some{10}, Some{500}}], None{}, ""}, M.Acct{"3", "c", "", "p", True{}, False{}, [M.Win{"7d", Some{10}, Some{200}}], None{}, ""}, M.Acct{"4", "d", "", "p", False{}, False{}, [], None{}, ""}, M.Acct{"5", "e", "", "p", False{}, False{}, [M.Win{"7d", Some{10}, Some{200}}], None{}, ""}])) == ["3", "5", "2", "1", "4"] : List<&2, String>}:
+  {==}
