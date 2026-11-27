@@ -157,13 +157,20 @@ def perform3b(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pr
     tcfg_need(target, tcfg_text)
     perform6(ctx, root, target, force, pre, ts, seq_text, seq, temail, l, tcreds, Json.parse(B.text_or(tcfg_text)))
 
+# The tokens store's credential for the slot when it has one, else the stored one.
+def pick_creds(+fresh: String, +stored: String) -> String:
+  SBase.sel.s(SBase.nonempty(fresh), fresh, stored)
+
+def need_creds(+target: String, +tcreds: String) -> Act.of(Unit):
+  need(SBase.nonempty(tcreds), "Account-" ++ target ++ " has no stored credentials. " ++ reinstruct(target))
+
 def perform3(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pre: L.Pre, +ts: String, +seq_text: String, +seq: Json.Json, +temail: String) -> Act.of(Json.Json):
   do ActM<Json.Json>:
     l : L.Live <- L.read_live(ctx)
     +stored : String <- SIo.read_cred(root, target, temail)
     +fresh : String <- Tokensrc.creds_for(temail)
-    +tcreds : String = SBase.sel.s(SBase.nonempty(fresh), fresh, stored)
-    need(SBase.nonempty(tcreds), "Account-" ++ target ++ " has no stored credentials. " ++ reinstruct(target))
+    +tcreds : String = pick_creds(fresh, stored)
+    need_creds(target, tcreds)
     perform3b(ctx, root, target, force, pre, ts, seq_text, seq, temail, l, tcreds)
 
 def perform2b(+ctx: SBase.Ctx, +root: String, +target: String, +force: Bool, +pre: L.Pre, +ts: String, +seq_text: String, +seq: Json.Json, +rec: Maybe<&2, Json.Json>) -> Act.of(Json.Json):
@@ -216,15 +223,32 @@ def pick_org(+m: Maybe<&2, Json.Json>, +target: String) -> String:
     case Some{seq}:
       pick_org2(SSeq.slot_record(seq, target))
 
+def to_email(+op: Json.Json) -> String:
+  SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email")
+
+# The org to verify the switch against: the slot's when a pick config is active, else the target's.
+def verify_org(+pick: Json.Json, +org: String, +op: Json.Json) -> String:
+  SBase.sel.s(SBase.nonempty(SSeq.field_str(pick, "account")), org, SSeq.field_str(op, "targetOrg"))
+
+# Records the switched-to account as the active pick; the slot's org.
+def record_pick(+ctx: SBase.Ctx, +target: String, +op: Json.Json) -> Act.of(String):
+  do ActM<String>:
+    +seqm : Maybe<&2, Json.Json> <- SIo.read_seq(SBase.root_of(ctx))
+    +org : String = pick_org(seqm, target)
+    Tokensrc.write_pick(to_email(op), org)
+    return org
+
+def verify_switch(+ctx: SBase.Ctx, +opts: L.Opts, +target: String, +org: String, +op: Json.Json) -> Act.of(Unit):
+  do ActM<Unit>:
+    pick : Json.Json <- Act.lift(Json.Json, Tokensrc.read_pick())
+    verify_live(ctx, L.opts_delay(opts), target, to_email(op), verify_org(pick, org, op))
+
 def do_switch2(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts, +pre: L.Pre) -> Act.of(Json.Json):
   do ActM<Json.Json>:
     ts : String <- SIo.now_iso()
     +op : Json.Json <- L.with_locks(Json.Json, ctx, perform_locked(ctx, target, force, pre, ts))
-    +seqm : Maybe<&2, Json.Json> <- SIo.read_seq(SBase.root_of(ctx))
-    +org : String = pick_org(seqm, target)
-    Tokensrc.write_pick(SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), org)
-    pick : Json.Json <- Act.lift(Json.Json, Tokensrc.read_pick())
-    verify_live(ctx, L.opts_delay(opts), target, SSeq.field_str(SSeq.get_or("to", op, Json.JNull{}), "email"), SBase.sel.s(SBase.nonempty(SSeq.field_str(pick, "account")), org, SSeq.field_str(op, "targetOrg")))
+    +org : String <- record_pick(ctx, target, op)
+    verify_switch(ctx, opts, target, org, op)
     return op
 
 def do_switch(+ctx: SBase.Ctx, +target: String, +force: Bool, +opts: L.Opts) -> Act.of(Json.Json):
